@@ -12,6 +12,8 @@ $db = getDB();
 
 // Handle visit soft delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invalidate_visit'])) {
+    requirePermission('visit_invalidate');
+    
     $visit_id = intval($_POST['visit_id'] ?? 0);
     $reason = trim($_POST['invalid_reason'] ?? '');
     
@@ -317,14 +319,24 @@ include 'header.php';
                 <a href="customer_view.php?id=<?php echo $customer_id; ?>&edit=1" class="btn btn-primary">
                     <ion-icon name="create"></ion-icon> Edit <?php echo htmlspecialchars(getCustomerTerm('Customer')); ?>
                 </a>
+                <?php 
+                $has_any_visit_permission = (hasPermission('food_visit') || hasPermission('money_visit') || hasPermission('voucher_create') || isAdmin());
+                if ($has_any_visit_permission): ?>
                 <div class="action-dropdown">
                     <button type="button" class="btn btn-primary">Record Visit <ion-icon name="chevron-down"></ion-icon></button>
                     <ul class="action-dropdown-menu">
-                        <li><a href="visits_food.php?customer_id=<?php echo $customer_id; ?>">Food Visit</a></li>
-                        <li><a href="visits_money.php?customer_id=<?php echo $customer_id; ?>">Money Visit</a></li>
-                        <li><a href="visits_voucher.php?customer_id=<?php echo $customer_id; ?>">Voucher Visit</a></li>
+                        <?php if (hasPermission('food_visit') || isAdmin()): ?>
+                            <li><a href="visits_food.php?customer_id=<?php echo $customer_id; ?>">Food Visit</a></li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('money_visit') || isAdmin()): ?>
+                            <li><a href="visits_money.php?customer_id=<?php echo $customer_id; ?>">Money Visit</a></li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('voucher_create') || isAdmin()): ?>
+                            <li><a href="visits_voucher.php?customer_id=<?php echo $customer_id; ?>">Voucher Visit</a></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
+                <?php endif; ?>
                 <a href="#visit-history" class="btn btn-secondary">
                     <ion-icon name="arrow-down"></ion-icon> Jump to Visit History
                 </a>
@@ -332,14 +344,24 @@ include 'header.php';
                 <a href="customer_view.php?id=<?php echo $customer_id; ?>" class="btn btn-secondary">
                     <ion-icon name="eye"></ion-icon> View Mode
                 </a>
+                <?php 
+                $has_any_visit_permission = (hasPermission('food_visit') || hasPermission('money_visit') || hasPermission('voucher_create') || isAdmin());
+                if ($has_any_visit_permission): ?>
                 <div class="action-dropdown">
                     <button type="button" class="btn btn-primary">Record Visit <ion-icon name="chevron-down"></ion-icon></button>
                     <ul class="action-dropdown-menu">
-                        <li><a href="visits_food.php?customer_id=<?php echo $customer_id; ?>">Food Visit</a></li>
-                        <li><a href="visits_money.php?customer_id=<?php echo $customer_id; ?>">Money Visit</a></li>
-                        <li><a href="visits_voucher.php?customer_id=<?php echo $customer_id; ?>">Voucher Visit</a></li>
+                        <?php if (hasPermission('food_visit') || isAdmin()): ?>
+                            <li><a href="visits_food.php?customer_id=<?php echo $customer_id; ?>">Food Visit</a></li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('money_visit') || isAdmin()): ?>
+                            <li><a href="visits_money.php?customer_id=<?php echo $customer_id; ?>">Money Visit</a></li>
+                        <?php endif; ?>
+                        <?php if (hasPermission('voucher_create') || isAdmin()): ?>
+                            <li><a href="visits_voucher.php?customer_id=<?php echo $customer_id; ?>">Voucher Visit</a></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
         <h1><?php echo htmlspecialchars($customer['name']); ?></h1>
@@ -459,9 +481,11 @@ include 'header.php';
                     <div id="household_members">
                         <?php foreach ($household as $idx => $member): ?>
                             <div class="household-member-item" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px; position: relative;">
+                                <?php if ($idx > 0): ?>
                                 <button type="button" class="btn btn-small" onclick="removeHouseholdMember(this)" style="position: absolute; top: 0.5rem; right: 0.5rem; background-color: var(--danger-color); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" title="Delete this member">
                                     <ion-icon name="trash"></ion-icon>
                                 </button>
+                                <?php endif; ?>
                                 <div class="form-row">
                                     <div class="form-group" style="flex: 2;">
                                         <label>Name</label>
@@ -604,8 +628,11 @@ include 'header.php';
                 const container = document.getElementById('household_members');
                 const newItem = document.createElement('div');
                 newItem.className = 'household-member-item';
-                newItem.style.cssText = 'margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px;';
+                newItem.style.cssText = 'margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px; position: relative;';
                 newItem.innerHTML = `
+                    <button type="button" class="btn btn-small" onclick="removeHouseholdMember(this)" style="position: absolute; top: 0.5rem; right: 0.5rem; background-color: var(--danger-color); color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;" title="Delete this member">
+                        <ion-icon name="trash"></ion-icon>
+                    </button>
                     <div class="form-row">
                         <div class="form-group" style="flex: 2;">
                             <label>Name</label>
@@ -894,7 +921,9 @@ include 'header.php';
                                             <td>
                                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                                     <?php if (!$visit['is_invalid']): ?>
-                                                        <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                        <?php if (hasPermission('visit_invalidate') || isAdmin()): ?>
+                                                            <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                        <?php endif; ?>
                                                         <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
                                                     <?php else: ?>
                                                         <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
@@ -948,7 +977,9 @@ include 'header.php';
                                             <td>
                                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                                     <?php if (!$visit['is_invalid']): ?>
-                                                        <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                        <?php if (hasPermission('visit_invalidate') || isAdmin()): ?>
+                                                            <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                        <?php endif; ?>
                                                         <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
                                                     <?php else: ?>
                                                         <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
@@ -1067,9 +1098,11 @@ include 'header.php';
                                                                 <input type="hidden" name="voucher_code" value="<?php echo htmlspecialchars($voucher_details[$visit['id']]['voucher_code']); ?>">
                                                                 <button type="submit" name="revoke_voucher" class="btn btn-small" style="background-color: #d32f2f; color: white;">Revoke</button>
                                                             </form>
-                                                            <a href="voucher_redemption.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" class="btn btn-small" style="background-color: var(--success-color); color: white;">Redeem</a>
+                                                            <?php if (hasPermission('voucher_redeem') || isAdmin()): ?>
+                                                                <a href="voucher_redemption.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" class="btn btn-small" style="background-color: var(--success-color); color: white;">Redeem</a>
+                                                            <?php endif; ?>
                                                         <?php endif; ?>
-                                                        <a href="print_voucher.php?id=<?php echo $voucher_details[$visit['id']]['id']; ?>" target="_blank" class="btn btn-small">Print</a>
+                                                        <a href="print_voucher.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" target="_blank" class="btn btn-small">Print</a>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>

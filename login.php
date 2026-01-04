@@ -117,9 +117,13 @@ $page_title = "Login";
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: var(--light-bg);
+            background: transparent;
             position: relative;
             z-index: 1;
+        }
+        
+        body {
+            background-color: var(--light-bg);
         }
         .login-box {
             background: linear-gradient(135deg, var(--white-gradient-start) 0%, var(--bg-gradient-end) 100%);

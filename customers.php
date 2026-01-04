@@ -298,15 +298,9 @@ include 'header.php';
                             <td><?php echo htmlspecialchars($customer['city'] . ', ' . $customer['state']); ?></td>
                             <td><?php echo date('M d, Y g:i A', strtotime($customer['signup_date'])); ?></td>
                             <td><?php echo $customer['visit_count']; ?></td>
-                            <td style="white-space: nowrap;">
-                                <a href="customer_view.php?id=<?php echo $customer['id']; ?>" class="btn btn-small">View</a>
-                                <div class="action-dropdown">
-                                    <button type="button" class="btn btn-small btn-primary">Record Visit <ion-icon name="chevron-down"></ion-icon></button>
-                                    <ul class="action-dropdown-menu">
-                                        <li><a href="visits_food.php?customer_id=<?php echo $customer['id']; ?>">Food Visit</a></li>
-                                        <li><a href="visits_money.php?customer_id=<?php echo $customer['id']; ?>">Money Visit</a></li>
-                                        <li><a href="visits_voucher.php?customer_id=<?php echo $customer['id']; ?>">Voucher Visit</a></li>
-                                    </ul>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <a href="customer_view.php?id=<?php echo $customer['id']; ?>" class="btn btn-small">View</a>
                                 </div>
                             </td>
                         </tr>
@@ -324,88 +318,6 @@ include 'header.php';
     <?php endif; ?>
 </div>
 
-<style>
-.action-dropdown {
-    position: relative;
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 0.5rem;
-}
-
-.action-dropdown button {
-    cursor: pointer;
-    border: none;
-}
-
-.action-dropdown button ion-icon {
-    font-size: 0.8rem;
-    vertical-align: middle;
-    margin-left: 0.25rem;
-}
-
-.action-dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: var(--white);
-    box-shadow: var(--shadow-lg);
-    border-radius: 4px;
-    min-width: 160px;
-    padding: 0.5rem 0;
-    margin-top: 0.25rem;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    list-style: none;
-    z-index: 10000;
-    white-space: nowrap;
-}
-
-.action-dropdown-menu::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    height: 10px;
-    background: transparent;
-    pointer-events: auto;
-}
-
-.action-dropdown:hover .action-dropdown-menu,
-.action-dropdown-menu:hover {
-    display: block !important;
-}
-
-.action-dropdown-menu li {
-    margin: 0;
-}
-
-.action-dropdown-menu a {
-    display: block;
-    padding: 0.5rem 1rem;
-    color: var(--text-color);
-    text-decoration: none;
-    transition: background-color 0.2s;
-}
-
-.action-dropdown-menu a:hover {
-    background-color: var(--light-bg);
-}
-
-/* Fix table overflow to allow dropdown to show */
-.table-responsive {
-    overflow: visible !important;
-}
-
-.data-table {
-    overflow: visible !important;
-}
-
-.data-table tbody tr {
-    position: relative;
-}
-</style>
 
 <?php include 'footer.php'; ?>
 

@@ -122,7 +122,9 @@
                             <?php endif; ?>
                         </ul>
                     </li>
-                    <li><a href="voucher_redemption.php">Redeem</a></li>
+                    <?php if (hasPermission('voucher_redeem') || isAdmin()): ?>
+                        <li><a href="voucher_redemption.php">Redeem</a></li>
+                    <?php endif; ?>
                     <?php if (hasPermission('report_access') || isAdmin()): ?>
                         <li><a href="reports.php">Reports</a></li>
                     <?php endif; ?>

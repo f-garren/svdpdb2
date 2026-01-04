@@ -38,13 +38,24 @@ try {
     $db->exec("CREATE TABLE IF NOT EXISTS `employee_permissions` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `employee_id` int(11) NOT NULL,
-      `permission` enum('customer_create','food_visit','money_visit','voucher_create','settings_access','report_access') NOT NULL,
+      `permission` enum('customer_create','food_visit','money_visit','voucher_create','voucher_redeem','visit_invalidate','settings_access','report_access') NOT NULL,
       `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`),
       UNIQUE KEY `unique_employee_permission` (`employee_id`, `permission`),
       KEY `employee_id` (`employee_id`),
       CONSTRAINT `emp_perm_employee_fk` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    
+    // Update permission enum if table already exists (for existing installations)
+    try {
+        $db->exec("ALTER TABLE `employee_permissions` MODIFY COLUMN `permission` enum('customer_create','food_visit','money_visit','voucher_create','voucher_redeem','visit_invalidate','settings_access','report_access') NOT NULL");
+        echo "  Updated permission enum to include visit_invalidate...\n";
+    } catch (PDOException $e) {
+        // Table might not exist yet or enum already updated, which is fine
+        if (strpos($e->getMessage(), 'Unknown column') === false && strpos($e->getMessage(), 'Duplicate column') === false) {
+            echo "  Note: Could not update permission enum (this is OK if table doesn't exist yet): " . $e->getMessage() . "\n";
+        }
+    }
     
     // Create customer audit table
     echo "Creating customer_audit table...\n";

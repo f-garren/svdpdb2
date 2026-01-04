@@ -2,7 +2,7 @@
 require_once 'config.php';
 require_once 'auth.php';
 
-requireLogin();
+requirePermission('voucher_redeem');
 
 $error = '';
 $success = '';

@@ -253,6 +253,18 @@ include 'header.php';
                     </div>
                     <div class="form-group" style="flex: 1 1 200px;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="permissions[]" value="voucher_redeem">
+                            <span>Voucher Redemption</span>
+                        </label>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 200px;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="permissions[]" value="visit_invalidate">
+                            <span>Visit Invalidation</span>
+                        </label>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 200px;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
                             <input type="checkbox" name="permissions[]" value="settings_access">
                             <span>Settings Access</span>
                         </label>
