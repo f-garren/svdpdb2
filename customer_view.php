@@ -76,6 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revoke_voucher'])) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_customer'])) {
+    requirePermission('customer_edit');
+    
     try {
         $db->beginTransaction();
         
@@ -131,22 +133,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_customer'])) {
             $stmt->execute([$signup_timestamp, $customer_id]);
         }
         
+        // Get existing household members for audit trail
+        $stmt = $db->prepare("SELECT name, birthdate, relationship FROM household_members WHERE customer_id = ? ORDER BY name");
+        $stmt->execute([$customer_id]);
+        $old_household = $stmt->fetchAll();
+        
+        // Build new household members array from form data
+        $new_household = [];
+        if (!empty($p['household_names'])) {
+            foreach ($p['household_names'] as $idx => $name) {
+                if (!empty(trim($name))) {
+                    $birthdate = !empty($p['household_birthdates'][$idx]) ? date('Y-m-d', strtotime($p['household_birthdates'][$idx])) : date('Y-m-d');
+                    $new_household[] = [
+                        'name' => trim($name),
+                        'birthdate' => $birthdate,
+                        'relationship' => $p['household_relationships'][$idx] ?? ''
+                    ];
+                }
+            }
+        }
+        
+        // Log household member changes
+        // Create normalized arrays for comparison (name + birthdate as key)
+        $old_normalized = [];
+        foreach ($old_household as $member) {
+            $key = strtolower(trim($member['name'])) . '|' . $member['birthdate'];
+            $old_normalized[$key] = $member;
+        }
+        
+        $new_normalized = [];
+        foreach ($new_household as $member) {
+            $key = strtolower(trim($member['name'])) . '|' . $member['birthdate'];
+            $new_normalized[$key] = $member;
+        }
+        
+        // Find removed members
+        foreach ($old_normalized as $key => $old_member) {
+            if (!isset($new_normalized[$key])) {
+                $member_info = $old_member['name'] . ' (' . $old_member['relationship'] . ', ' . date('M d, Y', strtotime($old_member['birthdate'])) . ')';
+                logAuditTrail($db, $customer_id, 'household_member', $member_info, '[REMOVED]');
+            }
+        }
+        
+        // Find added members
+        foreach ($new_normalized as $key => $new_member) {
+            if (!isset($old_normalized[$key])) {
+                $member_info = $new_member['name'] . ' (' . $new_member['relationship'] . ', ' . date('M d, Y', strtotime($new_member['birthdate'])) . ')';
+                logAuditTrail($db, $customer_id, 'household_member', '[ADDED]', $member_info);
+            }
+        }
+        
+        // Find edited members (same name/birthdate but different relationship)
+        foreach ($old_normalized as $key => $old_member) {
+            if (isset($new_normalized[$key])) {
+                $new_member = $new_normalized[$key];
+                if ($old_member['relationship'] !== $new_member['relationship']) {
+                    $old_info = $old_member['name'] . ' - Relationship: ' . $old_member['relationship'];
+                    $new_info = $new_member['name'] . ' - Relationship: ' . $new_member['relationship'];
+                    logAuditTrail($db, $customer_id, 'household_member', $old_info, $new_info);
+                }
+                // Check if name changed (same birthdate)
+                if (strtolower(trim($old_member['name'])) !== strtolower(trim($new_member['name']))) {
+                    $old_info = 'Name: ' . $old_member['name'] . ' (' . date('M d, Y', strtotime($old_member['birthdate'])) . ')';
+                    $new_info = 'Name: ' . $new_member['name'] . ' (' . date('M d, Y', strtotime($new_member['birthdate'])) . ')';
+                    logAuditTrail($db, $customer_id, 'household_member', $old_info, $new_info);
+                }
+            }
+        }
+        
         // Delete existing household members and insert new ones
         $stmt = $db->prepare("DELETE FROM household_members WHERE customer_id = ?");
         $stmt->execute([$customer_id]);
         
-        if (!empty($p['household_names'])) {
-            foreach ($p['household_names'] as $idx => $name) {
-                if (!empty(trim($name))) {
-                    $stmt = $db->prepare("INSERT INTO household_members (customer_id, name, birthdate, relationship) VALUES (?, ?, ?, ?)");
-                    $birthdate = !empty($p['household_birthdates'][$idx]) ? date('Y-m-d', strtotime($p['household_birthdates'][$idx])) : date('Y-m-d');
-                    $stmt->execute([
-                        $customer_id,
-                        trim($name),
-                        $birthdate,
-                        $p['household_relationships'][$idx] ?? ''
-                    ]);
-                }
+        if (!empty($new_household)) {
+            foreach ($new_household as $member) {
+                $stmt = $db->prepare("INSERT INTO household_members (customer_id, name, birthdate, relationship) VALUES (?, ?, ?, ?)");
+                $stmt->execute([
+                    $customer_id,
+                    $member['name'],
+                    $member['birthdate'],
+                    $member['relationship']
+                ]);
             }
         }
         
@@ -242,14 +309,25 @@ $stmt = $db->prepare("SELECT v.*,
 $stmt->execute([$customer_id]);
 $visits = $stmt->fetchAll();
 
-// Get audit trail
+// Pagination for audit trail
+$audit_page = max(1, intval($_GET['audit_page'] ?? 1));
+$audit_logs_per_page = 100;
+$audit_offset = ($audit_page - 1) * $audit_logs_per_page;
+
+// Get total count for audit trail
+$stmt = $db->prepare("SELECT COUNT(*) as total FROM customer_audit WHERE customer_id = ?");
+$stmt->execute([$customer_id]);
+$total_audit_logs = $stmt->fetch()['total'];
+$total_audit_pages = ceil($total_audit_logs / $audit_logs_per_page);
+
+// Get audit trail with pagination
 $stmt = $db->prepare("SELECT ca.*, e.username, e.full_name 
     FROM customer_audit ca 
     LEFT JOIN employees e ON ca.changed_by = e.id 
     WHERE ca.customer_id = ? 
     ORDER BY ca.changed_at DESC 
-    LIMIT 50");
-$stmt->execute([$customer_id]);
+    LIMIT ? OFFSET ?");
+$stmt->execute([$customer_id, $audit_logs_per_page, $audit_offset]);
 $audit_trail = $stmt->fetchAll();
 
 // Count visits by type (excluding invalid)
@@ -315,7 +393,7 @@ include 'header.php';
     <div class="page-header">
         <div class="header-actions">
             <a href="customers.php" class="btn btn-secondary">← Back to Customers</a>
-            <?php if (!$edit_mode): ?>
+            <?php if (!$edit_mode && (hasPermission('customer_edit') || isAdmin())): ?>
                 <a href="customer_view.php?id=<?php echo $customer_id; ?>&edit=1" class="btn btn-primary">
                     <ion-icon name="create"></ion-icon> Edit <?php echo htmlspecialchars(getCustomerTerm('Customer')); ?>
                 </a>
@@ -407,6 +485,10 @@ include 'header.php';
     <?php endif; ?>
 
     <?php if ($edit_mode): ?>
+        <?php if (!hasPermission('customer_edit') && !isAdmin()): ?>
+            <div class="alert alert-error">You do not have permission to edit customers.</div>
+            <?php $edit_mode = false; ?>
+        <?php else: ?>
         <!-- EDIT MODE -->
         <form method="POST" action="" class="customer-edit-form">
             <input type="hidden" name="save_customer" value="1">
@@ -502,22 +584,6 @@ include 'header.php';
                                 </div>
                             </div>
                         <?php endforeach; ?>
-                        <div class="household-member-item" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px;">
-                            <div class="form-row">
-                                <div class="form-group" style="flex: 2;">
-                                    <label>Name</label>
-                                    <input type="text" name="household_names[]" placeholder="Add new member...">
-                                </div>
-                                <div class="form-group">
-                                    <label>Birthdate</label>
-                                    <input type="date" name="household_birthdates[]">
-                                </div>
-                                <div class="form-group">
-                                    <label>Relationship</label>
-                                    <input type="text" name="household_relationships[]" placeholder="e.g., Spouse, Child">
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <button type="button" class="btn btn-secondary btn-small" onclick="addHouseholdMember()">Add Another Member</button>
                 </div>
@@ -670,6 +736,7 @@ include 'header.php';
                 }
             });
         </script>
+        <?php endif; ?>
     <?php else: ?>
         <!-- VIEW MODE -->
         <div class="customer-details-grid">
@@ -1135,9 +1202,12 @@ include 'header.php';
             </div>
 
             <!-- Audit Trail Section -->
-            <?php if (count($audit_trail) > 0): ?>
+            <?php if ($total_audit_logs > 0): ?>
             <div class="detail-section">
                 <h2>Change History (Audit Trail)</h2>
+                <p style="margin-bottom: 1rem; color: var(--text-color-muted);">
+                    Showing <?php echo number_format($audit_offset + 1); ?>-<?php echo number_format(min($audit_offset + $audit_logs_per_page, $total_audit_logs)); ?> of <?php echo number_format($total_audit_logs); ?> total changes
+                </p>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -1160,6 +1230,22 @@ include 'header.php';
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                
+                <?php if ($total_audit_pages > 1): ?>
+                    <div style="margin-top: 2rem; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+                        <?php if ($audit_page > 1): ?>
+                            <a href="?id=<?php echo $customer_id; ?>&audit_page=<?php echo $audit_page - 1; ?>" class="btn btn-secondary">← Previous</a>
+                        <?php endif; ?>
+                        
+                        <span style="color: var(--text-color-muted);">
+                            Page <?php echo $audit_page; ?> of <?php echo $total_audit_pages; ?>
+                        </span>
+                        
+                        <?php if ($audit_page < $total_audit_pages): ?>
+                            <a href="?id=<?php echo $customer_id; ?>&audit_page=<?php echo $audit_page + 1; ?>" class="btn btn-secondary">Next →</a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         </div>

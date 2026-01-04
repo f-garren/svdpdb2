@@ -4,8 +4,15 @@ require_once 'auth.php';
 
 requirePermission('settings_access');
 
+// Check for backup success message from redirect
+if (isset($_SESSION['backup_success'])) {
+    $success = $_SESSION['backup_success'];
+    unset($_SESSION['backup_success']);
+} else {
+    $success = '';
+}
+
 $error = '';
-$success = '';
 $mode = getSetting('settings_mode', 'simple');
 $current_timezone = getSetting('timezone', 'America/Boise');
 $organization_name = getSetting('organization_name', 'NexusDB');
@@ -56,8 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_backup'])) {
         exec($command, $output, $return_code);
         
         if ($return_code === 0 && file_exists($backup_path)) {
-            // Redirect to backup section
-            header('Location: settings.php#category-backup');
+            // Set success message and redirect to backup section
+            $_SESSION['backup_success'] = "Backup created successfully: {$backup_filename}";
+            header('Location: settings.php?category=backup');
             exit;
         } else {
             $error = "Failed to create backup. " . implode("\n", $output);
@@ -848,10 +856,11 @@ include 'header.php';
                             <?php if (empty($backup_files)): ?>
                                 <p class="no-data">No backups found. Create your first backup above.</p>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="data-table" style="margin-top: 1rem;">
                                     <thead>
                                         <tr>
-                                            <th>Backup File</th>
+                                            <th style="max-width: 300px;">Backup File</th>
                                             <th>Date Created</th>
                                             <th>Size</th>
                                             <th>Actions</th>
@@ -860,7 +869,9 @@ include 'header.php';
                                     <tbody>
                                         <?php foreach ($backup_files as $backup): ?>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($backup['name']); ?></td>
+                                                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo htmlspecialchars($backup['name']); ?>">
+                                                    <?php echo htmlspecialchars($backup['name']); ?>
+                                                </td>
                                                 <td><?php echo date('Y-m-d H:i:s', $backup['date']); ?></td>
                                                 <td><?php echo number_format($backup['size'] / 1024, 2); ?> KB</td>
                                                 <td>
@@ -886,6 +897,7 @@ include 'header.php';
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                         
@@ -924,6 +936,23 @@ include 'header.php';
                             document.getElementById('category-' + category).classList.add('active');
                         });
                     });
+                    
+                    // Handle category from URL parameter
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const categoryParam = urlParams.get('category');
+                    if (categoryParam) {
+                        const categoryElement = document.querySelector(`.settings-category[data-category="${categoryParam}"]`);
+                        if (categoryElement) {
+                            categoryElement.click();
+                            // Scroll to category after a brief delay to ensure it's visible
+                            setTimeout(() => {
+                                const contentElement = document.getElementById(`category-${categoryParam}`);
+                                if (contentElement) {
+                                    contentElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                            }, 100);
+                        }
+                    }
                 </script>
             </div>
         <?php else: ?>

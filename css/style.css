@@ -397,6 +397,7 @@ body > * {
     transition: all 0.3s;
     position: relative;
     overflow: hidden;
+    min-width: 0; /* Allows flex items to shrink below their content size */
 }
 
 .stat-card::before {
@@ -428,6 +429,12 @@ body > * {
     z-index: 1;
 }
 
+.stat-info {
+    flex: 1;
+    min-width: 0; /* Allows text to wrap */
+    overflow: hidden;
+}
+
 .stat-info h3 {
     font-size: 2.5rem;
     color: var(--primary-color);
@@ -435,6 +442,9 @@ body > * {
     font-weight: 900;
     letter-spacing: 1px;
     z-index: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 .stat-info p {
@@ -581,6 +591,115 @@ body > * {
 .data-table td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+}
+
+/* Better column alignment for visit history tables */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+    /* Date column */
+    width: 15%;
+    min-width: 180px;
+    white-space: nowrap;
+}
+
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+    /* Fourth column - Status */
+    width: 10%;
+    min-width: 80px;
+    text-align: center;
+}
+
+.data-table th:nth-child(4) {
+    text-align: center;
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+    /* Fifth column - Actions or Notes */
+    width: 20%;
+    min-width: 150px;
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+    /* Sixth column - Actions (for voucher visits) */
+    width: 20%;
+    min-width: 200px;
+}
+
+/* Specific adjustments for visit history tables */
+.visit-type-section .data-table th:nth-child(2),
+.visit-type-section .data-table td:nth-child(2) {
+    /* Amount or Voucher Code column */
+    width: 12%;
+    min-width: 120px;
+}
+
+
+/* Food visits: Date, Notes, Status, Actions */
+.visit-type-section[data-visit-type="food"] .data-table th:nth-child(2),
+.visit-type-section[data-visit-type="food"] .data-table td:nth-child(2) {
+    /* Notes column for food visits */
+    width: auto;
+    min-width: 200px;
+}
+
+/* Money visits: Date, Amount, Notes, Status, Actions */
+.visit-type-section[data-visit-type="money"] .data-table th:nth-child(2),
+.visit-type-section[data-visit-type="money"] .data-table td:nth-child(2) {
+    /* Amount column */
+    width: 12%;
+    min-width: 100px;
+    text-align: right;
+}
+
+.visit-type-section[data-visit-type="money"] .data-table th:nth-child(2) {
+    text-align: right;
+}
+
+.visit-type-section[data-visit-type="money"] .data-table th:nth-child(3),
+.visit-type-section[data-visit-type="money"] .data-table td:nth-child(3) {
+    /* Notes column */
+    width: auto;
+    min-width: 200px;
+}
+
+/* Voucher visits: Date, Voucher Code, Amount, Status, Notes, Actions */
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(2),
+.visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(2) {
+    /* Voucher Code column */
+    width: 15%;
+    min-width: 140px;
+}
+
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(3),
+.visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(3) {
+    /* Amount column */
+    width: 12%;
+    min-width: 100px;
+    text-align: right;
+}
+
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(3) {
+    text-align: right;
+}
+
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(4),
+.visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(4) {
+    /* Status column */
+    width: 10%;
+    min-width: 80px;
+    text-align: center;
+}
+
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(5),
+.visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(5) {
+    /* Notes column */
+    width: auto;
+    min-width: 150px;
 }
 
 .data-table tbody tr {

@@ -5,6 +5,8 @@ require_once 'auth.php';
 requireLogin();
 
 $db = getDB();
+
+// Granular search (existing functionality)
 $search = $_GET['search'] ?? '';
 $filter_city = $_GET['city'] ?? '';
 $filter_state = $_GET['state'] ?? '';
@@ -196,128 +198,254 @@ include 'header.php';
         <p class="lead">Search and manage <?php echo strtolower(getCustomerTermPlural('customer')); ?> records</p>
     </div>
 
-    <div class="search-box">
-        <form method="GET" action="" class="filter-form">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="search">Search</label>
-                    <input type="text" name="search" id="search" placeholder="Name, phone, or address..." value="<?php echo htmlspecialchars($search); ?>" class="search-input">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="city">City</label>
-                    <select name="city" id="city">
-                        <option value="">All Cities</option>
-                        <?php foreach ($cities as $city): ?>
-                            <option value="<?php echo htmlspecialchars($city); ?>" <?php echo $filter_city === $city ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($city); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="state">State</label>
-                    <select name="state" id="state">
-                        <option value="">All States</option>
-                        <?php foreach ($states as $state): ?>
-                            <option value="<?php echo htmlspecialchars($state); ?>" <?php echo $filter_state === $state ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($state); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="visit_type">Visit Type</label>
-                    <select name="visit_type" id="visit_type">
-                        <option value="all" <?php echo $filter_visit_type === 'all' || empty($filter_visit_type) ? 'selected' : ''; ?>>All Types</option>
-                        <option value="food" <?php echo $filter_visit_type === 'food' ? 'selected' : ''; ?>>Food</option>
-                        <option value="money" <?php echo $filter_visit_type === 'money' ? 'selected' : ''; ?>>Money</option>
-                        <option value="voucher" <?php echo $filter_visit_type === 'voucher' ? 'selected' : ''; ?>>Voucher</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="date_range">Date Range</label>
-                    <select name="date_range" id="date_range">
-                        <option value="" <?php echo empty($filter_date_range) ? 'selected' : ''; ?>>All Time</option>
-                        <option value="7" <?php echo $filter_date_range === '7' ? 'selected' : ''; ?>>Last 7 Days</option>
-                        <option value="30" <?php echo $filter_date_range === '30' ? 'selected' : ''; ?>>Last 30 Days</option>
-                        <option value="90" <?php echo $filter_date_range === '90' ? 'selected' : ''; ?>>Last 90 Days</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="visit_date">Visited On Date</label>
-                    <input type="date" name="visit_date" id="visit_date" value="<?php echo htmlspecialchars($filter_visit_date); ?>">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="visit_count">Visit Count</label>
-                    <select name="visit_count" id="visit_count">
-                        <option value="" <?php echo empty($filter_visit_count) ? 'selected' : ''; ?>>All</option>
-                        <option value="has_visits" <?php echo $filter_visit_count === 'has_visits' ? 'selected' : ''; ?>>Has Visits</option>
-                        <option value="no_visits" <?php echo $filter_visit_count === 'no_visits' ? 'selected' : ''; ?>>No Visits</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>&nbsp;</label>
-                    <div>
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                        <?php if (!empty($search) || !empty($filter_city) || !empty($filter_state) || !empty($filter_visit_date) || !empty($filter_visit_type) || !empty($filter_date_range) || !empty($filter_visit_count)): ?>
-                            <a href="customers.php" class="btn btn-secondary">Clear</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
+    <!-- General Search Section -->
+    <div class="report-section" style="margin-bottom: 2rem;">
+        <h2>Quick Customer Search</h2>
+        <p class="help-text">Type a customer name or phone number to quickly find a customer (similar to visit pages)</p>
+        <div class="form-group" style="max-width: 500px; margin-bottom: 1rem; position: relative;">
+            <label for="general_search">Search Customer</label>
+            <input type="text" id="general_search" placeholder="Type <?php echo strtolower(getCustomerTerm('customer')); ?> name or phone..." class="search-input" autocomplete="off">
+            <div id="general_search_results" class="search-results"></div>
+        </div>
+        <div id="general_search_selected" style="display: none; margin-top: 1rem;">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>City, State</th>
+                            <th>Signup Date</th>
+                            <th>Visits</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="general_search_table_body">
+                    </tbody>
+                </table>
             </div>
-        </form>
+        </div>
     </div>
 
-    <?php if (count($customers) > 0): ?>
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Address</th>
-                        <th>City, State</th>
-                        <th>Signup Date</th>
-                        <th>Visits</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($customers as $customer): ?>
+    <!-- Granular Search Section -->
+    <div class="report-section">
+        <h2>Advanced Customer Search</h2>
+        <p class="help-text">Use filters to search customers by visit history, location, dates, and more</p>
+        <div class="search-box">
+            <form method="GET" action="" class="filter-form">
+                <input type="hidden" name="general_search" value="">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="search">Search</label>
+                        <input type="text" name="search" id="search" placeholder="Name, phone, or address..." value="<?php echo htmlspecialchars($search); ?>" class="search-input">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="city">City</label>
+                        <select name="city" id="city">
+                            <option value="">All Cities</option>
+                            <?php foreach ($cities as $city): ?>
+                                <option value="<?php echo htmlspecialchars($city); ?>" <?php echo $filter_city === $city ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($city); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="state">State</label>
+                        <select name="state" id="state">
+                            <option value="">All States</option>
+                            <?php foreach ($states as $state): ?>
+                                <option value="<?php echo htmlspecialchars($state); ?>" <?php echo $filter_state === $state ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($state); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="visit_type">Visit Type</label>
+                        <select name="visit_type" id="visit_type">
+                            <option value="all" <?php echo $filter_visit_type === 'all' || empty($filter_visit_type) ? 'selected' : ''; ?>>All Types</option>
+                            <option value="food" <?php echo $filter_visit_type === 'food' ? 'selected' : ''; ?>>Food</option>
+                            <option value="money" <?php echo $filter_visit_type === 'money' ? 'selected' : ''; ?>>Money</option>
+                            <option value="voucher" <?php echo $filter_visit_type === 'voucher' ? 'selected' : ''; ?>>Voucher</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="date_range">Date Range</label>
+                        <select name="date_range" id="date_range">
+                            <option value="" <?php echo empty($filter_date_range) ? 'selected' : ''; ?>>All Time</option>
+                            <option value="7" <?php echo $filter_date_range === '7' ? 'selected' : ''; ?>>Last 7 Days</option>
+                            <option value="30" <?php echo $filter_date_range === '30' ? 'selected' : ''; ?>>Last 30 Days</option>
+                            <option value="90" <?php echo $filter_date_range === '90' ? 'selected' : ''; ?>>Last 90 Days</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="visit_date">Visited On Date</label>
+                        <input type="date" name="visit_date" id="visit_date" value="<?php echo htmlspecialchars($filter_visit_date); ?>">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="visit_count">Visit Count</label>
+                        <select name="visit_count" id="visit_count">
+                            <option value="" <?php echo empty($filter_visit_count) ? 'selected' : ''; ?>>All</option>
+                            <option value="has_visits" <?php echo $filter_visit_count === 'has_visits' ? 'selected' : ''; ?>>Has Visits</option>
+                            <option value="no_visits" <?php echo $filter_visit_count === 'no_visits' ? 'selected' : ''; ?>>No Visits</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                            <?php if (!empty($search) || !empty($filter_city) || !empty($filter_state) || !empty($filter_visit_date) || !empty($filter_visit_type) || !empty($filter_date_range) || !empty($filter_visit_count)): ?>
+                                <a href="customers.php" class="btn btn-secondary">Clear</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <?php if (count($customers) > 0): ?>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <td><?php echo htmlspecialchars($customer['name']); ?></td>
-                            <td><?php echo htmlspecialchars($customer['phone']); ?></td>
-                            <td><?php echo htmlspecialchars($customer['address']); ?></td>
-                            <td><?php echo htmlspecialchars($customer['city'] . ', ' . $customer['state']); ?></td>
-                            <td><?php echo date('M d, Y g:i A', strtotime($customer['signup_date'])); ?></td>
-                            <td><?php echo $customer['visit_count']; ?></td>
-                            <td>
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <a href="customer_view.php?id=<?php echo $customer['id']; ?>" class="btn btn-small">View</a>
-                                </div>
-                            </td>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>City, State</th>
+                            <th>Signup Date</th>
+                            <th>Visits</th>
+                            <th>Actions</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php else: ?>
-        <div class="no-data">
-            <p>No <?php echo strtolower(getCustomerTermPlural('customers')); ?> found<?php echo !empty($search) ? ' matching your search' : ''; ?>.</p>
-            <?php if (empty($search)): ?>
-                <a href="signup.php" class="btn btn-primary">Add <?php echo htmlspecialchars(getCustomerTerm('Customer')); ?></a>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($customers as $customer): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($customer['name']); ?></td>
+                                <td><?php echo htmlspecialchars($customer['phone']); ?></td>
+                                <td><?php echo htmlspecialchars($customer['address']); ?></td>
+                                <td><?php echo htmlspecialchars($customer['city'] . ', ' . $customer['state']); ?></td>
+                                <td><?php echo date('M d, Y g:i A', strtotime($customer['signup_date'])); ?></td>
+                                <td><?php echo $customer['visit_count']; ?></td>
+                                <td>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <a href="customer_view.php?id=<?php echo $customer['id']; ?>" class="btn btn-small">View</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php elseif (!empty($search) || !empty($filter_city) || !empty($filter_state) || !empty($filter_visit_date) || !empty($filter_visit_type) || !empty($filter_date_range) || !empty($filter_visit_count)): ?>
+            <div class="no-data">
+                <p>No <?php echo strtolower(getCustomerTermPlural('customers')); ?> found matching your filters.</p>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
+<script src="js/customer_search.js"></script>
+<script>
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Initialize general customer search (similar to visits pages)
+let generalSearchTimeout;
+const generalSearchInput = document.getElementById('general_search');
+const generalSearchResults = document.getElementById('general_search_results');
+const generalSearchSelected = document.getElementById('general_search_selected');
+const generalSearchTableBody = document.getElementById('general_search_table_body');
+
+if (generalSearchInput && generalSearchResults) {
+    generalSearchInput.addEventListener('input', function() {
+        clearTimeout(generalSearchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            generalSearchResults.innerHTML = '';
+            generalSearchSelected.style.display = 'none';
+            return;
+        }
+        
+        generalSearchTimeout = setTimeout(() => {
+            fetch(`customer_search.php?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    generalSearchResults.innerHTML = '';
+                    if (data.length === 0) {
+                        generalSearchResults.innerHTML = '<div class="no-results">No customers found</div>';
+                        generalSearchSelected.style.display = 'none';
+                        return;
+                    }
+                    
+                    data.forEach(customer => {
+                        const div = document.createElement('div');
+                        div.className = 'customer-result';
+                        div.innerHTML = `
+                            <strong>${customer.name}</strong><br>
+                            <small>${customer.phone || ''} - ${customer.city || ''}, ${customer.state || ''}</small>
+                        `;
+                        div.addEventListener('click', () => {
+                            // Fetch full customer details and display
+                            fetch(`customer_search.php?id=${customer.id}`)
+                                .then(response => response.json())
+                                .then(customers => {
+                                    if (customers.length > 0) {
+                                        const cust = customers[0];
+                                        const signupDate = cust.signup_date ? new Date(cust.signup_date).toLocaleDateString('en-US', { 
+                                            month: 'short', 
+                                            day: 'numeric', 
+                                            year: 'numeric', 
+                                            hour: 'numeric', 
+                                            minute: '2-digit' 
+                                        }) : '';
+                                        generalSearchTableBody.innerHTML = `
+                                            <tr>
+                                                <td>${escapeHtml(cust.name)}</td>
+                                                <td>${escapeHtml(cust.phone || '')}</td>
+                                                <td>${escapeHtml(cust.address || '')}</td>
+                                                <td>${escapeHtml((cust.city || '') + ', ' + (cust.state || ''))}</td>
+                                                <td>${signupDate}</td>
+                                                <td>${cust.visit_count || 0}</td>
+                                                <td>
+                                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                        <a href="customer_view.php?id=${cust.id}" class="btn btn-small">View</a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        `;
+                                        generalSearchSelected.style.display = 'block';
+                                        generalSearchResults.innerHTML = '';
+                                        generalSearchInput.value = cust.name;
+                                    }
+                                });
+                        });
+                        generalSearchResults.appendChild(div);
+                    });
+                })
+                .catch(error => console.error('Search error:', error));
+        }, 300);
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!generalSearchInput.contains(e.target) && !generalSearchResults.contains(e.target)) {
+            generalSearchResults.innerHTML = '';
+        }
+    });
+}
+</script>
 
 <?php include 'footer.php'; ?>
-

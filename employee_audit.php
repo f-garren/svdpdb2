@@ -22,7 +22,18 @@ if (!$employee) {
     exit;
 }
 
-// Get audit trail
+// Pagination
+$page = max(1, intval($_GET['page'] ?? 1));
+$logs_per_page = 100;
+$offset = ($page - 1) * $logs_per_page;
+
+// Get total count
+$stmt = $db->prepare("SELECT COUNT(*) as total FROM employee_audit WHERE employee_id = ?");
+$stmt->execute([$employee_id]);
+$total_logs = $stmt->fetch()['total'];
+$total_pages = ceil($total_logs / $logs_per_page);
+
+// Get audit trail with pagination
 $stmt = $db->prepare("SELECT ea.*, 
     c.name as customer_name,
     c.id as customer_id,
@@ -42,8 +53,8 @@ $stmt = $db->prepare("SELECT ea.*,
     LEFT JOIN customers vchc ON vch.customer_id = vchc.id
     WHERE ea.employee_id = ?
     ORDER BY ea.created_at DESC
-    LIMIT 500");
-$stmt->execute([$employee_id]);
+    LIMIT ? OFFSET ?");
+$stmt->execute([$employee_id, $logs_per_page, $offset]);
 $audit_logs = $stmt->fetchAll();
 
 $page_title = "Employee Audit Trail";
@@ -61,6 +72,11 @@ include 'header.php';
 
     <div class="report-section">
         <h2>Action History</h2>
+        <?php if ($total_logs > 0): ?>
+            <p style="margin-bottom: 1rem; color: var(--text-color-muted);">
+                Showing <?php echo number_format($offset + 1); ?>-<?php echo number_format(min($offset + $logs_per_page, $total_logs)); ?> of <?php echo number_format($total_logs); ?> total actions
+            </p>
+        <?php endif; ?>
         <?php if (count($audit_logs) > 0): ?>
             <table class="data-table">
                 <thead>
@@ -148,6 +164,22 @@ include 'header.php';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            
+            <?php if ($total_pages > 1): ?>
+                <div style="margin-top: 2rem; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+                    <?php if ($page > 1): ?>
+                        <a href="?employee_id=<?php echo $employee_id; ?>&page=<?php echo $page - 1; ?>" class="btn btn-secondary">← Previous</a>
+                    <?php endif; ?>
+                    
+                    <span style="color: var(--text-color-muted);">
+                        Page <?php echo $page; ?> of <?php echo $total_pages; ?>
+                    </span>
+                    
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?employee_id=<?php echo $employee_id; ?>&page=<?php echo $page + 1; ?>" class="btn btn-secondary">Next →</a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         <?php else: ?>
             <p class="no-data">No audit logs found for this employee.</p>
         <?php endif; ?>

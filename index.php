@@ -4,26 +4,7 @@ require_once 'auth.php';
 
 requireLogin();
 
-// Get statistics
 $db = getDB();
-$current_month = date('Y-m');
-
-// Get all statistics in fewer queries (excluding invalid visits)
-$stats = $db->query("
-    SELECT 
-        (SELECT COUNT(*) FROM customers) as total_customers,
-        (SELECT COUNT(*) FROM customers WHERE DATE(signup_date) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as recent_customers,
-        (SELECT COUNT(*) FROM visits WHERE visit_type = 'food' AND DATE_FORMAT(visit_date, '%Y-%m') = '$current_month' AND (is_invalid = 0 OR is_invalid IS NULL)) as food_visits_month,
-        (SELECT COUNT(*) FROM visits WHERE visit_type = 'money' AND DATE_FORMAT(visit_date, '%Y-%m') = '$current_month' AND (is_invalid = 0 OR is_invalid IS NULL)) as money_visits_month,
-        (SELECT COUNT(*) FROM visits WHERE visit_type = 'voucher' AND DATE_FORMAT(visit_date, '%Y-%m') = '$current_month' AND (is_invalid = 0 OR is_invalid IS NULL)) as voucher_visits_month
-")->fetch();
-
-$total_customers = $stats['total_customers'];
-$recent_customers = $stats['recent_customers'];
-$food_visits_month = $stats['food_visits_month'];
-$money_visits_month = $stats['money_visits_month'];
-$voucher_visits_month = $stats['voucher_visits_month'];
-
 $page_title = "Dashboard";
 include 'header.php';
 ?>
@@ -34,65 +15,39 @@ include 'header.php';
         <p class="lead">Food Distribution Service Management System</p>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon"><ion-icon name="people"></ion-icon></div>
-            <div class="stat-info">
-                <h3><?php echo number_format($total_customers); ?></h3>
-                <p>Total <?php echo htmlspecialchars(getCustomerTermPlural('Customers')); ?></p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon"><ion-icon name="calendar"></ion-icon></div>
-            <div class="stat-info">
-                <h3><?php echo number_format($recent_customers); ?></h3>
-                <p>New (Last 30 Days)</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon"><ion-icon name="restaurant"></ion-icon></div>
-            <div class="stat-info">
-                <h3><?php echo number_format($food_visits_month); ?></h3>
-                <p>Food Visits This Month</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon"><ion-icon name="cash"></ion-icon></div>
-            <div class="stat-info">
-                <h3><?php echo number_format($money_visits_month); ?></h3>
-                <p>Money Visits This Month</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon"><ion-icon name="ticket"></ion-icon></div>
-            <div class="stat-info">
-                <h3><?php echo number_format($voucher_visits_month); ?></h3>
-                <p>Voucher Visits This Month</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="action-buttons">
-        <a href="signup.php" class="btn btn-primary btn-large">
-            <span class="btn-icon"><ion-icon name="add"></ion-icon></span>
+    <div class="action-buttons" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <a href="signup.php" class="btn btn-primary btn-large" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+            <span class="btn-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;"><ion-icon name="add"></ion-icon></span>
             <span>New <?php echo htmlspecialchars(getCustomerTerm('Customer')); ?> Signup</span>
         </a>
-        <a href="customers.php" class="btn btn-secondary btn-large">
-            <span class="btn-icon"><ion-icon name="search"></ion-icon></span>
+        <a href="customers.php" class="btn btn-secondary btn-large" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+            <span class="btn-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;"><ion-icon name="search"></ion-icon></span>
             <span>Search <?php echo htmlspecialchars(getCustomerTermPlural('Customers')); ?></span>
         </a>
-        <a href="visits_food.php" class="btn btn-secondary btn-large">
-            <span class="btn-icon"><ion-icon name="restaurant"></ion-icon></span>
+        <?php if (hasPermission('food_visit') || isAdmin()): ?>
+        <a href="visits_food.php" class="btn btn-secondary btn-large" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+            <span class="btn-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;"><ion-icon name="restaurant"></ion-icon></span>
             <span>Record Food Visit</span>
         </a>
-        <a href="reports.php" class="btn btn-secondary btn-large">
-            <span class="btn-icon"><ion-icon name="stats-chart"></ion-icon></span>
+        <?php endif; ?>
+        <?php if (hasPermission('money_visit') || isAdmin()): ?>
+        <a href="visits_money.php" class="btn btn-secondary btn-large" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+            <span class="btn-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;"><ion-icon name="cash"></ion-icon></span>
+            <span>Record Money Visit</span>
+        </a>
+        <?php endif; ?>
+        <?php if (hasPermission('voucher_create') || isAdmin()): ?>
+        <a href="visits_voucher.php" class="btn btn-secondary btn-large" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+            <span class="btn-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;"><ion-icon name="ticket"></ion-icon></span>
+            <span>Record Voucher Visit</span>
+        </a>
+        <?php endif; ?>
+        <?php if (hasPermission('report_access') || isAdmin()): ?>
+        <a href="reports.php" class="btn btn-secondary btn-large" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+            <span class="btn-icon" style="font-size: 2.5rem; margin-bottom: 0.5rem;"><ion-icon name="stats-chart"></ion-icon></span>
             <span>Reports</span>
         </a>
+        <?php endif; ?>
     </div>
 
     <div class="recent-section">
@@ -102,7 +57,7 @@ include 'header.php';
                            (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
                            FROM customers c 
                            ORDER BY c.created_at DESC 
-                           LIMIT 10")->fetchAll();
+                           LIMIT 15")->fetchAll();
         
         if (count($recent_customers_list) > 0) {
             echo '<table class="data-table">';

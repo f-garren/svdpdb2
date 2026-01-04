@@ -3,8 +3,26 @@ require_once 'config.php';
 
 $db = getDB();
 
+// Get date range filters
+$date_from = $_GET['date_from'] ?? '';
+$date_to = $_GET['date_to'] ?? '';
+
+// Build date filter
+$date_filter = "";
+$date_params = [];
+if (!empty($date_from) && !empty($date_to)) {
+    $date_filter = " AND DATE(v.visit_date) BETWEEN ? AND ?";
+    $date_params = [$date_from, $date_to];
+} elseif (!empty($date_from)) {
+    $date_filter = " AND DATE(v.visit_date) >= ?";
+    $date_params = [$date_from];
+} elseif (!empty($date_to)) {
+    $date_filter = " AND DATE(v.visit_date) <= ?";
+    $date_params = [$date_to];
+}
+
 // Get all money visits with household money count
-$stmt = $db->query("SELECT v.*, c.name as customer_name, c.phone, c.address, c.city, c.state,
+$query = "SELECT v.*, c.name as customer_name, c.phone, c.address, c.city, c.state,
                    (SELECT COUNT(DISTINCT v2.id) 
                     FROM visits v2
                     INNER JOIN household_members hm1 ON v2.customer_id = hm1.customer_id
@@ -13,8 +31,15 @@ $stmt = $db->query("SELECT v.*, c.name as customer_name, c.phone, c.address, c.c
                     AND v2.visit_type = 'money') as household_money_count
                    FROM visits v 
                    INNER JOIN customers c ON v.customer_id = c.id 
-                   WHERE v.visit_type = 'money'
-                   ORDER BY v.visit_date DESC");
+                   WHERE v.visit_type = 'money' AND (v.is_invalid = 0 OR v.is_invalid IS NULL)" . $date_filter . "
+                   ORDER BY v.visit_date DESC";
+
+if (!empty($date_params)) {
+    $stmt = $db->prepare($query);
+    $stmt->execute($date_params);
+} else {
+    $stmt = $db->query($query);
+}
 $money_visits = $stmt->fetchAll();
 
 // Set headers for CSV download
@@ -25,7 +50,7 @@ header('Content-Disposition: attachment; filename="money_visits_' . date('Y-m-d_
 $output = fopen('php://output', 'w');
 
 // Write CSV header
-fputcsv($output, ['Date', 'Customer Name', 'Phone', 'Address', 'City', 'State', 'Household Money Visits', 'Notes']);
+fputcsv($output, ['Date', 'Customer Name', 'Phone', 'Address', 'City', 'State', 'Amount', 'Household Money Visits', 'Notes']);
 
 // Write data rows
 foreach ($money_visits as $visit) {
@@ -36,6 +61,7 @@ foreach ($money_visits as $visit) {
         $visit['address'],
         $visit['city'],
         $visit['state'],
+        !empty($visit['amount']) ? number_format($visit['amount'], 2) : '0.00',
         $visit['household_money_count'] ?? 0,
         $visit['notes'] ?? ''
     ]);

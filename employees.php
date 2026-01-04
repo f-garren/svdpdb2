@@ -235,6 +235,12 @@ include 'header.php';
                     </div>
                     <div class="form-group" style="flex: 1 1 200px;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="permissions[]" value="customer_edit">
+                            <span>Customer Editing</span>
+                        </label>
+                    </div>
+                    <div class="form-group" style="flex: 1 1 200px;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
                             <input type="checkbox" name="permissions[]" value="food_visit">
                             <span>Food Visit Entry</span>
                         </label>

@@ -549,13 +549,12 @@ function addHouseholdMember() {
                 <label>Birthdate</label>
                 <input type="date" name="household_birthdates[]">
             </div>
-            <div class="form-group">
+            <div class="form-group" style="flex: 1;">
                 <label>Relationship</label>
-                <input type="text" name="household_relationships[]" placeholder="e.g., Son, Daughter, Spouse">
-            </div>
-            <div class="form-group">
-                <label>&nbsp;</label>
-                <button type="button" class="btn btn-small btn-danger" onclick="this.closest('.household-member').remove();">Remove</button>
+                <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                    <input type="text" name="household_relationships[]" placeholder="e.g., Son, Daughter, Spouse" style="flex: 1;">
+                    <button type="button" class="btn btn-small btn-danger" onclick="this.closest('.household-member').remove();" style="white-space: nowrap; flex-shrink: 0;">Remove</button>
+                </div>
             </div>
         </div>
     `;

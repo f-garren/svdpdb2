@@ -30,8 +30,14 @@ $shop_name = getSetting('shop_name', 'Partner Store');
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         @media print {
-            body { margin: 0; }
+            body { 
+                margin: 0; 
+                padding: 0.25in;
+            }
             .no-print { display: none; }
+            @page {
+                margin: 0.25in;
+            }
         }
         body {
             font-family: Arial, sans-serif;
@@ -42,31 +48,54 @@ $shop_name = getSetting('shop_name', 'Partner Store');
         .receipt-header {
             text-align: center;
             border-bottom: 2px solid #000;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
         .receipt-header h1 {
             margin: 0;
-            font-size: 24pt;
+            font-size: 20pt;
+        }
+        @media print {
+            .receipt-header h1 {
+                font-size: 18pt;
+            }
         }
         .voucher-code {
             text-align: center;
-            font-size: 32pt;
+            font-size: 28pt;
             font-weight: bold;
             color: var(--primary-color, #2c5aa0);
-            margin: 2rem 0;
-            padding: 1rem;
+            margin: 1rem 0;
+            padding: 0.75rem;
             border: 3px dashed #000;
+        }
+        @media print {
+            .voucher-code {
+                font-size: 24pt;
+                margin: 0.75rem 0;
+                padding: 0.5rem;
+            }
         }
         .voucher-amount {
             text-align: center;
-            font-size: 48pt;
+            font-size: 42pt;
             font-weight: bold;
             color: #2e7d32;
-            margin: 2rem 0;
+            margin: 1rem 0;
+        }
+        @media print {
+            .voucher-amount {
+                font-size: 36pt;
+                margin: 0.75rem 0;
+            }
         }
         .receipt-info {
-            margin: 1rem 0;
+            margin: 0.75rem 0;
+        }
+        @media print {
+            .receipt-info {
+                margin: 0.5rem 0;
+            }
         }
         .receipt-info table {
             width: 100%;
@@ -90,32 +119,48 @@ $shop_name = getSetting('shop_name', 'Partner Store');
         .status-redeemed { background: #bbdefb; color: #1565c0; }
         .status-expired { background: #ffcdd2; color: #c62828; }
         .footer {
-            margin-top: 2rem;
+            margin-top: 1rem;
             text-align: center;
-            font-size: 10pt;
+            font-size: 9pt;
             color: #666;
         }
-        .redemption-info {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 1rem;
-            margin: 1rem 0;
-            text-align: center;
+        @media print {
+            .footer {
+                margin-top: 0.5rem;
+                font-size: 8pt;
+            }
         }
         .barcode-container {
             text-align: center;
-            margin: 2rem 0;
-            padding: 1rem;
+            margin: 1rem 0;
+            padding: 0.5rem;
+        }
+        @media print {
+            .barcode-container {
+                margin: 0.75rem 0;
+                padding: 0.25rem;
+            }
         }
         .barcode-container svg {
             max-width: 100%;
             height: auto;
         }
+        @media print {
+            .barcode-container svg {
+                height: 60px;
+            }
+        }
         .barcode-label {
             margin-top: 0.5rem;
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
             letter-spacing: 0.1em;
+        }
+        @media print {
+            .barcode-label {
+                font-size: 10pt;
+                margin-top: 0.25rem;
+            }
         }
     </style>
 </head>
@@ -200,13 +245,6 @@ $shop_name = getSetting('shop_name', 'Partner Store');
         </table>
     </div>
 
-    <?php if ($voucher['status'] === 'active'): ?>
-    <div class="redemption-info">
-        <p><strong>This voucher can be redeemed at:</strong></p>
-        <p style="font-size: 18pt; font-weight: bold;"><?php echo htmlspecialchars($shop_name); ?></p>
-    </div>
-    <?php endif; ?>
-
     <div class="footer">
         <p>Generated on <?php echo date('F d, Y \a\t g:i A'); ?></p>
         <p><?php echo htmlspecialchars($organization_name); ?></p>
@@ -217,7 +255,7 @@ $shop_name = getSetting('shop_name', 'Partner Store');
         JsBarcode("#barcode", "<?php echo htmlspecialchars($voucher['voucher_code'], ENT_QUOTES); ?>", {
             format: "CODE128",
             width: 2,
-            height: 80,
+            height: window.matchMedia('print').matches ? 60 : 80,
             displayValue: false,
             margin: 10
         });
