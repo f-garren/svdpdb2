@@ -68,7 +68,7 @@ body::after {
     background-size: var(--pattern-size) var(--pattern-size);
     opacity: 0.7;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
 }
 
 body::before {
@@ -81,7 +81,7 @@ body::before {
     background: linear-gradient(180deg, var(--primary-color) 0%, transparent 100%);
     opacity: calc(var(--pattern-opacity) * 0.6);
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
 }
 
 .container {
@@ -91,6 +91,12 @@ body::before {
     position: relative;
     z-index: 1;
     background-color: transparent;
+}
+
+/* Ensure all content is above background pattern */
+body > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* Organization Header */

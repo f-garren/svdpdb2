@@ -104,6 +104,7 @@ $page_title = "Login";
             min-height: 100vh;
             background: var(--light-bg);
             position: relative;
+            z-index: 1;
         }
         .login-box {
             background: linear-gradient(135deg, var(--white-gradient-start) 0%, var(--bg-gradient-end) 100%);
@@ -113,6 +114,7 @@ $page_title = "Login";
             width: 100%;
             max-width: 450px;
             position: relative;
+            z-index: 2;
         }
         .login-box::before {
             content: '';
