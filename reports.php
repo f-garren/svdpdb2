@@ -272,7 +272,7 @@ if (!empty($params)) {
 
     <!-- Dashboard Overview Statistics -->
     <div class="report-section">
-        <h2>Dashboard Overview</h2>
+        <h2>Overview</h2>
         <div class="stats-grid" style="margin-bottom: 2rem;">
             <div class="stat-card">
                 <div class="stat-icon"><ion-icon name="people"></ion-icon></div>
@@ -316,6 +316,36 @@ if (!empty($params)) {
         </div>
     </div>
 
+    <!-- CUSTOMER STATISTICS -->
+    <div class="report-section">
+        <h2>Customer Statistics</h2>
+        <div class="stats-grid" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+                <div class="stat-icon"><ion-icon name="people"></ion-icon></div>
+                <div class="stat-info">
+                    <h3><?php echo number_format($total_customers); ?></h3>
+                    <p>Total <?php echo htmlspecialchars(getCustomerTermPlural('Customers')); ?></p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"><ion-icon name="calendar"></ion-icon></div>
+                <div class="stat-info">
+                    <h3><?php echo number_format($customers_30_days); ?></h3>
+                    <p>New Customers (Last 30 Days)</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"><ion-icon name="stats-chart"></ion-icon></div>
+                <div class="stat-info">
+                    <h3><?php echo number_format($customers_7_days); ?></h3>
+                    <p>New Customers (Last 7 Days)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Date Range Filter -->
     <div class="report-section" style="margin-bottom: 2rem;">
         <h2>Date Range Filter</h2>
@@ -349,36 +379,6 @@ if (!empty($params)) {
                 </div>
             </div>
         </form>
-    </div>
-
-    <!-- CUSTOMER STATISTICS -->
-    <div class="report-section">
-        <h2>Customer Statistics</h2>
-        <div class="stats-grid" style="margin-bottom: 2rem;">
-            <div class="stat-card">
-                <div class="stat-icon"><ion-icon name="people"></ion-icon></div>
-                <div class="stat-info">
-                    <h3><?php echo number_format($total_customers); ?></h3>
-                    <p>Total <?php echo htmlspecialchars(getCustomerTermPlural('Customers')); ?></p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon"><ion-icon name="calendar"></ion-icon></div>
-                <div class="stat-info">
-                    <h3><?php echo number_format($customers_30_days); ?></h3>
-                    <p>New Customers (Last 30 Days)</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon"><ion-icon name="stats-chart"></ion-icon></div>
-                <div class="stat-info">
-                    <h3><?php echo number_format($customers_7_days); ?></h3>
-                    <p>New Customers (Last 7 Days)</p>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- VISIT STATISTICS (ALL TYPES) -->

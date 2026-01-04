@@ -935,9 +935,9 @@ include 'header.php';
                     </div>
                     
                     <!-- Visit Type Filter -->
-                    <div style="margin-bottom: 1.5rem;">
-                        <label for="visit_type_filter" style="display: inline-block; margin-right: 0.5rem; font-weight: bold;">Filter by Visit Type:</label>
-                        <select id="visit_type_filter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 1rem;">
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label for="visit_type_filter">Filter by Visit Type:</label>
+                        <select id="visit_type_filter">
                             <option value="all">All Types</option>
                             <option value="food">Food</option>
                             <option value="money">Money</option>
@@ -960,8 +960,8 @@ include 'header.php';
                                 <thead>
                                     <tr>
                                         <th>Date</th>
-                                        <th>Notes</th>
                                         <th>Status</th>
+                                        <th>Notes</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -970,19 +970,19 @@ include 'header.php';
                                         <tr style="<?php echo $visit['is_invalid'] ? 'opacity: 0.6; background-color: #ffebee;' : ''; ?>">
                                             <td><?php echo date('M d, Y \a\t g:i A', strtotime($visit['visit_date'])); ?></td>
                                             <td>
+                                                <?php if ($visit['is_invalid']): ?>
+                                                    <span style="color: #d32f2f; font-weight: bold;">Invalid</span>
+                                                <?php else: ?>
+                                                    <span style="color: green;">Valid</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
                                                 <?php echo nl2br(htmlspecialchars($visit['notes'] ?? '')); ?>
                                                 <?php if ($visit['is_invalid']): ?>
                                                     <div style="margin-top: 0.5rem; padding: 0.5rem; background: #ffcdd2; border-left: 3px solid #d32f2f;">
                                                         <strong>INVALID:</strong> <?php echo nl2br(htmlspecialchars($visit['invalid_reason'])); ?>
                                                         <br><small>Invalidated by <?php echo htmlspecialchars($visit['invalidated_by_name'] ?? $visit['invalidated_by_username'] ?? 'Unknown'); ?> on <?php echo date('M d, Y g:i A', strtotime($visit['invalidated_at'])); ?></small>
                                                     </div>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php if ($visit['is_invalid']): ?>
-                                                    <span style="color: #d32f2f; font-weight: bold;">Invalid</span>
-                                                <?php else: ?>
-                                                    <span style="color: green;">Valid</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
@@ -1015,8 +1015,8 @@ include 'header.php';
                                     <tr>
                                         <th>Date</th>
                                         <th>Amount</th>
-                                        <th>Notes</th>
                                         <th>Status</th>
+                                        <th>Notes</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -1026,19 +1026,19 @@ include 'header.php';
                                             <td><?php echo date('M d, Y \a\t g:i A', strtotime($visit['visit_date'])); ?></td>
                                             <td><?php echo !empty($visit['amount']) ? '$' . number_format($visit['amount'], 2) : '-'; ?></td>
                                             <td>
+                                                <?php if ($visit['is_invalid']): ?>
+                                                    <span style="color: #d32f2f; font-weight: bold;">Invalid</span>
+                                                <?php else: ?>
+                                                    <span style="color: green;">Valid</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
                                                 <?php echo nl2br(htmlspecialchars($visit['notes'] ?? '')); ?>
                                                 <?php if ($visit['is_invalid']): ?>
                                                     <div style="margin-top: 0.5rem; padding: 0.5rem; background: #ffcdd2; border-left: 3px solid #d32f2f;">
                                                         <strong>INVALID:</strong> <?php echo nl2br(htmlspecialchars($visit['invalid_reason'])); ?>
                                                         <br><small>Invalidated by <?php echo htmlspecialchars($visit['invalidated_by_name'] ?? $visit['invalidated_by_username'] ?? 'Unknown'); ?> on <?php echo date('M d, Y g:i A', strtotime($visit['invalidated_at'])); ?></small>
                                                     </div>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php if ($visit['is_invalid']): ?>
-                                                    <span style="color: #d32f2f; font-weight: bold;">Invalid</span>
-                                                <?php else: ?>
-                                                    <span style="color: green;">Valid</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
@@ -1101,7 +1101,7 @@ include 'header.php';
                                 <thead>
                                     <tr>
                                         <th>Date</th>
-                                        <th>Voucher Code</th>
+                                        <th>Code</th>
                                         <th>Amount</th>
                                         <th>Status</th>
                                         <th>Notes</th>

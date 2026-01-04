@@ -598,10 +598,6 @@ include 'header.php';
                                 <label for="min_days_between_visits">Minimum Days Between Food Visits</label>
                                 <input type="number" id="min_days_between_visits" name="min_days_between_visits" value="<?php echo $min_days_between; ?>" min="-1" required>
                             </div>
-                            
-                            <div class="form-group">
-                                <small class="help-text">Note: Use -1 for unlimited visits, any other number sets the limit.</small>
-                            </div>
                         </div>
                         
                         <div class="form-section">
@@ -610,25 +606,21 @@ include 'header.php';
                             <div class="form-group">
                                 <label for="money_distribution_limit">Money Distribution Limit Per Household (Total)</label>
                                 <input type="number" id="money_distribution_limit" name="money_distribution_limit" value="<?php echo $money_limit; ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="money_distribution_limit_month">Money Distribution Limit Per Month</label>
                                 <input type="number" id="money_distribution_limit_month" name="money_distribution_limit_month" value="<?php echo intval(getSetting('money_distribution_limit_month', -1)); ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="money_distribution_limit_year">Money Distribution Limit Per Year</label>
                                 <input type="number" id="money_distribution_limit_year" name="money_distribution_limit_year" value="<?php echo intval(getSetting('money_distribution_limit_year', -1)); ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="money_min_days_between">Minimum Days Between Money Visits</label>
                                 <input type="number" id="money_min_days_between" name="money_min_days_between" value="<?php echo intval(getSetting('money_min_days_between', -1)); ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                         </div>
                         
@@ -638,23 +630,21 @@ include 'header.php';
                             <div class="form-group">
                                 <label for="voucher_limit_month">Voucher Limit Per Month</label>
                                 <input type="number" id="voucher_limit_month" name="voucher_limit_month" value="<?php echo intval(getSetting('voucher_limit_month', -1)); ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="voucher_limit_year">Voucher Limit Per Year</label>
                                 <input type="number" id="voucher_limit_year" name="voucher_limit_year" value="<?php echo intval(getSetting('voucher_limit_year', -1)); ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="voucher_min_days_between">Minimum Days Between Voucher Visits</label>
                                 <input type="number" id="voucher_min_days_between" name="voucher_min_days_between" value="<?php echo intval(getSetting('voucher_min_days_between', -1)); ?>" min="-1" required>
                             </div>
-                            
-                            <div class="form-group">
-                                <small class="help-text">Note: Use -1 for unlimited visits, any other number sets the limit.</small>
-                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border-color);">
+                            <small class="help-text">Note: Use -1 for unlimited, any other number sets the limit.</small>
                         </div>
                     </div>
                     
@@ -976,10 +966,6 @@ include 'header.php';
                     <div class="form-group">
                         <label for="min_days_between_visits">Minimum Days Between Visits</label>
                         <input type="number" id="min_days_between_visits" name="min_days_between_visits" value="<?php echo $min_days_between; ?>" min="-1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <small class="help-text">Note: Use -1 for unlimited visits, any other number sets the limit.</small>
                     </div>
                 </div>
                 

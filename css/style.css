@@ -594,60 +594,48 @@ body > * {
     vertical-align: top;
 }
 
-/* Better column alignment for visit history tables */
-.data-table th:nth-child(1),
-.data-table td:nth-child(1) {
+/* Visit History Table Column Styling */
+
+/* Food visits: Date, Status, Notes, Actions (4 columns) */
+.visit-type-section[data-visit-type="food"] .data-table th:nth-child(1),
+.visit-type-section[data-visit-type="food"] .data-table td:nth-child(1) {
     /* Date column */
-    width: 15%;
+    width: 20%;
     min-width: 180px;
     white-space: nowrap;
 }
 
-
-.data-table th:nth-child(4),
-.data-table td:nth-child(4) {
-    /* Fourth column - Status */
-    width: 10%;
+.visit-type-section[data-visit-type="food"] .data-table th:nth-child(2),
+.visit-type-section[data-visit-type="food"] .data-table td:nth-child(2) {
+    /* Status column */
+    width: 12%;
     min-width: 80px;
     text-align: center;
 }
 
-.data-table th:nth-child(4) {
-    text-align: center;
+.visit-type-section[data-visit-type="food"] .data-table th:nth-child(3),
+.visit-type-section[data-visit-type="food"] .data-table td:nth-child(3) {
+    /* Notes column */
+    width: 48%;
+    min-width: 200px;
 }
 
-.data-table th:nth-child(5),
-.data-table td:nth-child(5) {
-    /* Fifth column - Actions or Notes */
+.visit-type-section[data-visit-type="food"] .data-table th:nth-child(4),
+.visit-type-section[data-visit-type="food"] .data-table td:nth-child(4) {
+    /* Actions column */
     width: 20%;
     min-width: 150px;
 }
 
-.data-table th:nth-child(6),
-.data-table td:nth-child(6) {
-    /* Sixth column - Actions (for voucher visits) */
-    width: 20%;
-    min-width: 200px;
+/* Money visits: Date, Amount, Status, Notes, Actions (5 columns) */
+.visit-type-section[data-visit-type="money"] .data-table th:nth-child(1),
+.visit-type-section[data-visit-type="money"] .data-table td:nth-child(1) {
+    /* Date column */
+    width: 18%;
+    min-width: 180px;
+    white-space: nowrap;
 }
 
-/* Specific adjustments for visit history tables */
-.visit-type-section .data-table th:nth-child(2),
-.visit-type-section .data-table td:nth-child(2) {
-    /* Amount or Voucher Code column */
-    width: 12%;
-    min-width: 120px;
-}
-
-
-/* Food visits: Date, Notes, Status, Actions */
-.visit-type-section[data-visit-type="food"] .data-table th:nth-child(2),
-.visit-type-section[data-visit-type="food"] .data-table td:nth-child(2) {
-    /* Notes column for food visits */
-    width: auto;
-    min-width: 200px;
-}
-
-/* Money visits: Date, Amount, Notes, Status, Actions */
 .visit-type-section[data-visit-type="money"] .data-table th:nth-child(2),
 .visit-type-section[data-visit-type="money"] .data-table td:nth-child(2) {
     /* Amount column */
@@ -656,18 +644,37 @@ body > * {
     text-align: right;
 }
 
-.visit-type-section[data-visit-type="money"] .data-table th:nth-child(2) {
-    text-align: right;
-}
-
 .visit-type-section[data-visit-type="money"] .data-table th:nth-child(3),
 .visit-type-section[data-visit-type="money"] .data-table td:nth-child(3) {
+    /* Status column */
+    width: 12%;
+    min-width: 80px;
+    text-align: center;
+}
+
+.visit-type-section[data-visit-type="money"] .data-table th:nth-child(4),
+.visit-type-section[data-visit-type="money"] .data-table td:nth-child(4) {
     /* Notes column */
-    width: auto;
+    width: 38%;
     min-width: 200px;
 }
 
-/* Voucher visits: Date, Voucher Code, Amount, Status, Notes, Actions */
+.visit-type-section[data-visit-type="money"] .data-table th:nth-child(5),
+.visit-type-section[data-visit-type="money"] .data-table td:nth-child(5) {
+    /* Actions column */
+    width: 20%;
+    min-width: 150px;
+}
+
+/* Voucher visits: Date, Code, Amount, Status, Notes, Actions (6 columns) */
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(1),
+.visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(1) {
+    /* Date column */
+    width: 15%;
+    min-width: 180px;
+    white-space: nowrap;
+}
+
 .visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(2),
 .visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(2) {
     /* Voucher Code column */
@@ -683,14 +690,10 @@ body > * {
     text-align: right;
 }
 
-.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(3) {
-    text-align: right;
-}
-
 .visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(4),
 .visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(4) {
     /* Status column */
-    width: 10%;
+    width: 12%;
     min-width: 80px;
     text-align: center;
 }
@@ -698,8 +701,15 @@ body > * {
 .visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(5),
 .visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(5) {
     /* Notes column */
-    width: auto;
+    width: 26%;
     min-width: 150px;
+}
+
+.visit-type-section[data-visit-type="voucher"] .data-table th:nth-child(6),
+.visit-type-section[data-visit-type="voucher"] .data-table td:nth-child(6) {
+    /* Actions column */
+    width: 20%;
+    min-width: 200px;
 }
 
 .data-table tbody tr {
@@ -1403,6 +1413,27 @@ ion-icon {
     font-family: var(--font-decorative);
     text-transform: uppercase;
     letter-spacing: 2px;
+}
+
+/* Compact styling for quick customer search results */
+.quick-search-section {
+    padding: 1rem !important;
+    overflow: visible !important;
+}
+
+#general_search_selected .data-table {
+    margin-bottom: 0.5rem;
+}
+
+#general_search_selected .data-table th {
+    padding: 0.75rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+#general_search_selected .data-table td {
+    padding: 0.5rem 0.75rem;
+    line-height: 1.3;
+    font-size: 0.9rem;
 }
 
 /* No Data */

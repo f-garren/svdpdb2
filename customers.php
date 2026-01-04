@@ -111,8 +111,7 @@ if ($visit_join_needed) {
               (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
               FROM customers c 
               INNER JOIN visits v ON c.id = v.customer_id 
-              $where_clause
-              AND (v.is_invalid = 0 OR v.is_invalid IS NULL) $visit_where
+              $where_clause" . ($where_clause ? ' AND' : ' WHERE') . " (v.is_invalid = 0 OR v.is_invalid IS NULL) $visit_where
               GROUP BY c.id";
     
     // Handle visit_count filter
@@ -124,8 +123,7 @@ if ($visit_join_needed) {
             $query = "SELECT DISTINCT c.*, 
                      (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
                      FROM customers c 
-                     $where_clause
-                     AND NOT EXISTS (SELECT 1 FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL))
+                     $where_clause" . ($where_clause ? ' AND' : ' WHERE') . " NOT EXISTS (SELECT 1 FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL))
                      ORDER BY c.name LIMIT 200";
             $all_params = $params;
             if (!empty($all_params)) {
@@ -199,15 +197,15 @@ include 'header.php';
     </div>
 
     <!-- General Search Section -->
-    <div class="report-section" style="margin-bottom: 2rem;">
+    <div class="report-section quick-search-section" style="margin-bottom: 2rem;">
         <h2>Quick Customer Search</h2>
         <p class="help-text">Type a customer name or phone number to quickly find a customer (similar to visit pages)</p>
-        <div class="form-group" style="max-width: 500px; margin-bottom: 1rem; position: relative;">
+        <div class="form-group" style="margin-bottom: 1rem; position: relative;">
             <label for="general_search">Search Customer</label>
             <input type="text" id="general_search" placeholder="Type <?php echo strtolower(getCustomerTerm('customer')); ?> name or phone..." class="search-input" autocomplete="off">
             <div id="general_search_results" class="search-results"></div>
         </div>
-        <div id="general_search_selected" style="display: none; margin-top: 1rem;">
+        <div id="general_search_selected" style="display: none; margin-top: 0.5rem;">
             <div class="table-responsive">
                 <table class="data-table">
                     <thead>
