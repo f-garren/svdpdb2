@@ -62,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_submit'])) {
         $notes = $p['notes'] ?? '';
         $stmt = $db->prepare("INSERT INTO visits (customer_id, visit_date, visit_type, notes) VALUES (?, ?, 'food', ?)");
         $stmt->execute([$customer_id, $visit_date, $notes]);
+        $visit_id = $db->lastInsertId();
+        
+        // Log audit
+        logEmployeeAction($db, getCurrentEmployeeId(), 'visit_create', 'visit', $visit_id, "Created food visit for customer ID {$customer_id}");
         
         $success = "Food visit recorded successfully! <a href='customer_view.php?id=" . $customer_id . "'>View customer</a>";
         $customer = null;

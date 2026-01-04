@@ -79,6 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_submit'])) {
         $notes = $p['notes'] ?? '';
         $stmt = $db->prepare("INSERT INTO visits (customer_id, visit_date, visit_type, amount, notes) VALUES (?, ?, 'money', ?, ?)");
         $stmt->execute([$customer_id, $visit_date, $amount, $notes]);
+        $visit_id = $db->lastInsertId();
+        
+        // Log audit
+        logEmployeeAction($db, getCurrentEmployeeId(), 'visit_create', 'visit', $visit_id, "Created money visit for customer ID {$customer_id}, amount: $" . number_format($amount, 2));
         
         $success = "Money visit recorded successfully! Amount: $" . number_format($amount, 2) . " <a href='customer_view.php?id=" . $customer_id . "'>View customer</a>";
         

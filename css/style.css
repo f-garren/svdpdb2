@@ -51,12 +51,24 @@ body {
     font-family: var(--font-primary);
     color: var(--text-color);
     background-color: var(--light-bg);
+    line-height: 1.6;
+    position: relative;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-image: 
         repeating-linear-gradient(45deg, transparent, transparent 35px, var(--bg-pattern) 35px, var(--bg-pattern) 70px),
         repeating-linear-gradient(-45deg, transparent, transparent 35px, var(--bg-pattern) 35px, var(--bg-pattern) 70px);
     background-size: var(--pattern-size) var(--pattern-size);
-    line-height: 1.6;
-    position: relative;
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: 0;
 }
 
 body::before {
@@ -67,7 +79,7 @@ body::before {
     right: 0;
     height: 100px;
     background: linear-gradient(180deg, var(--primary-color) 0%, transparent 100%);
-    opacity: var(--pattern-opacity);
+    opacity: calc(var(--pattern-opacity) * 0.6);
     pointer-events: none;
     z-index: 0;
 }
@@ -78,6 +90,48 @@ body::before {
     padding: 20px;
     position: relative;
     z-index: 1;
+    background-color: transparent;
+}
+
+/* Organization Header */
+.org-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    padding: 1.5rem 0;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    border-bottom: var(--border-width) var(--border-style) var(--accent-color);
+    z-index: 1001;
+}
+
+.org-header .container {
+    text-align: center;
+}
+
+.org-name {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    font-family: var(--font-primary);
+}
+
+.org-name a {
+    color: var(--white);
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    border: 2px solid var(--accent-color);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, transparent 100%);
+    transition: all 0.3s;
+}
+
+.org-name a:hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.1) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-gold);
 }
 
 /* Art Deco Navigation */
@@ -108,24 +162,10 @@ body::before {
 
 .navbar .container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
 
-.nav-brand a {
-    color: var(--white);
-    text-decoration: none;
-    font-size: 1.75rem;
-    font-weight: 900;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    font-family: var(--font-primary);
-    position: relative;
-    padding: 0.5rem 1rem;
-    border: 2px solid var(--accent-color);
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, transparent 100%);
-}
 
 .nav-menu {
     display: flex;

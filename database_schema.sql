@@ -81,6 +81,24 @@ CREATE TABLE IF NOT EXISTS `income_sources` (
   CONSTRAINT `income_customer_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Employees table (must be created before visits table due to foreign key dependency)
+CREATE TABLE IF NOT EXISTS `employees` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(100) NOT NULL UNIQUE,
+  `password_hash` varchar(255) NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `is_admin` tinyint(1) NOT NULL DEFAULT 0,
+  `force_password_reset` tinyint(1) NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `last_login` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_username` (`username`),
+  KEY `idx_is_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Visits table for tracking and limiting customer visits
 CREATE TABLE IF NOT EXISTS `visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -89,12 +107,18 @@ CREATE TABLE IF NOT EXISTS `visits` (
   `visit_type` enum('food','money','voucher') NOT NULL DEFAULT 'food',
   `amount` decimal(10,2) DEFAULT NULL,
   `notes` text,
+  `is_invalid` tinyint(1) NOT NULL DEFAULT 0,
+  `invalid_reason` text DEFAULT NULL,
+  `invalidated_by` int(11) DEFAULT NULL,
+  `invalidated_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `customer_id` (`customer_id`),
   KEY `visit_date` (`visit_date`),
   KEY `visit_type` (`visit_type`),
-  CONSTRAINT `visits_customer_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE
+  KEY `idx_is_invalid` (`is_invalid`),
+  CONSTRAINT `visits_customer_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `visits_invalidated_by_fk` FOREIGN KEY (`invalidated_by`) REFERENCES `employees` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Vouchers table
@@ -131,24 +155,6 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('visits_per_year_limit', '12'),
 ('min_days_between_visits', '14');
 
--- Employees table
-CREATE TABLE IF NOT EXISTS `employees` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) NOT NULL UNIQUE,
-  `password_hash` varchar(255) NOT NULL,
-  `full_name` varchar(255) NOT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `is_admin` tinyint(1) NOT NULL DEFAULT 0,
-  `force_password_reset` tinyint(1) NOT NULL DEFAULT 0,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `last_login` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_username` (`username`),
-  KEY `idx_is_active` (`is_active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Employee permissions table
 CREATE TABLE IF NOT EXISTS `employee_permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -178,14 +184,22 @@ CREATE TABLE IF NOT EXISTS `customer_audit` (
   CONSTRAINT `audit_employee_fk` FOREIGN KEY (`changed_by`) REFERENCES `employees` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add soft delete fields to visits table
-ALTER TABLE `visits` 
-  ADD COLUMN `is_invalid` tinyint(1) NOT NULL DEFAULT 0 AFTER `notes`,
-  ADD COLUMN `invalid_reason` text DEFAULT NULL AFTER `is_invalid`,
-  ADD COLUMN `invalidated_by` int(11) DEFAULT NULL AFTER `invalid_reason`,
-  ADD COLUMN `invalidated_at` datetime DEFAULT NULL AFTER `invalidated_by`,
-  ADD KEY `idx_is_invalid` (`is_invalid`),
-  ADD CONSTRAINT `visits_invalidated_by_fk` FOREIGN KEY (`invalidated_by`) REFERENCES `employees` (`id`) ON DELETE SET NULL;
+-- Employee audit trail table
+CREATE TABLE IF NOT EXISTS `employee_audit` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `employee_id` int(11) NOT NULL,
+  `action_type` varchar(50) NOT NULL,
+  `target_type` varchar(50) DEFAULT NULL,
+  `target_id` int(11) DEFAULT NULL,
+  `details` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `employee_id` (`employee_id`),
+  KEY `action_type` (`action_type`),
+  KEY `target_type` (`target_type`),
+  KEY `created_at` (`created_at`),
+  CONSTRAINT `emp_audit_employee_fk` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create default admin account (password: 'admin' - must be changed on first login)
 -- Note: Run init_admin.php after schema import to set proper password hash

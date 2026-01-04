@@ -92,11 +92,15 @@
     </style>
 </head>
 <body>
+    <div class="org-header">
+        <div class="container">
+            <h1 class="org-name">
+                <a href="index.php"><?php echo htmlspecialchars(getSetting('organization_name', 'NexusDB')); ?></a>
+            </h1>
+        </div>
+    </div>
     <nav class="navbar">
         <div class="container">
-            <div class="nav-brand">
-                <a href="index.php"><?php echo htmlspecialchars(getSetting('organization_name', 'NexusDB')); ?></a>
-            </div>
             <ul class="nav-menu">
                 <?php if (isLoggedIn()): ?>
                     <li><a href="index.php">Dashboard</a></li>

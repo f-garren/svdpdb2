@@ -64,6 +64,24 @@ try {
       CONSTRAINT `audit_employee_fk` FOREIGN KEY (`changed_by`) REFERENCES `employees` (`id`) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     
+    // Create employee audit table
+    echo "Creating employee_audit table...\n";
+    $db->exec("CREATE TABLE IF NOT EXISTS `employee_audit` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `employee_id` int(11) NOT NULL,
+      `action_type` varchar(50) NOT NULL,
+      `target_type` varchar(50) DEFAULT NULL,
+      `target_id` int(11) DEFAULT NULL,
+      `details` text,
+      `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      KEY `employee_id` (`employee_id`),
+      KEY `action_type` (`action_type`),
+      KEY `target_type` (`target_type`),
+      KEY `created_at` (`created_at`),
+      CONSTRAINT `emp_audit_employee_fk` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    
     // Add soft delete columns to visits table (if they don't exist)
     echo "Adding soft delete columns to visits table...\n";
     try {

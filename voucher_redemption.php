@@ -70,6 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redeem_voucher']) && 
             $stmt = $db->prepare("UPDATE vouchers SET status = 'redeemed', redeemed_date = NOW(), redeemed_by = ? WHERE voucher_code = ?");
             $stmt->execute([$redeemed_by, $voucher_code]);
             
+            // Log audit
+            $voucher_id = $voucher_info['id'] ?? null;
+            logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_redeem', 'voucher', $voucher_id, "Redeemed voucher {$voucher_code} by {$redeemed_by}, amount: $" . number_format($voucher_info['amount'], 2));
+            
             $success = "Voucher redeemed successfully! Amount: $" . number_format($voucher_info['amount'], 2);
             $voucher_info = null; // Clear for new search
             $voucher_code = '';
@@ -204,7 +208,7 @@ include 'header.php';
                 </tr>
                 <?php if ($voucher_info['expiry_date']): ?>
                 <tr>
-                    <th>Expiry Date:</th>
+                    <th>Expiration Date:</th>
                     <td><?php echo date('F d, Y', strtotime($voucher_info['expiry_date'])); ?></td>
                 </tr>
                 <?php endif; ?>
@@ -220,7 +224,7 @@ include 'header.php';
                 <input type="hidden" name="voucher_code" value="<?php echo htmlspecialchars($voucher_code); ?>">
                 <div class="form-group">
                     <label for="redeemed_by">Redeemed By (Store Clerk Name) <span class="required">*</span></label>
-                    <input type="text" id="redeemed_by" name="redeemed_by" placeholder="Enter your name" required>
+                    <input type="text" id="redeemed_by" name="redeemed_by" value="<?php echo htmlspecialchars($_SESSION['full_name'] ?? getCurrentEmployee()['full_name'] ?? ''); ?>" placeholder="Enter your name" required>
                     <small class="help-text">This field is required</small>
                 </div>
                 <div class="form-actions">

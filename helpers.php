@@ -137,5 +137,29 @@ function logAuditTrail($db, $customer_id, $field_name, $old_value, $new_value, $
         $new_value !== null ? (string)$new_value : null,
         $changed_by
     ]);
+    
+    // Also log to employee audit
+    logEmployeeAction($db, $changed_by, 'customer_edit', 'customer', $customer_id, "Field '{$field_name}' changed from '{$old_value}' to '{$new_value}'");
+}
+
+// Log employee action
+function logEmployeeAction($db, $employee_id, $action_type, $target_type = null, $target_id = null, $details = null) {
+    if ($employee_id === null) {
+        require_once __DIR__ . '/auth.php';
+        $employee_id = getCurrentEmployeeId();
+    }
+    
+    if ($employee_id === null) {
+        return; // Can't log if no employee ID
+    }
+    
+    $stmt = $db->prepare("INSERT INTO employee_audit (employee_id, action_type, target_type, target_id, details) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([
+        $employee_id,
+        $action_type,
+        $target_type,
+        $target_id,
+        $details
+    ]);
 }
 

@@ -117,6 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_submit'])) {
         ]);
         
         $db->commit();
+        
+        // Log audit
+        logEmployeeAction($db, getCurrentEmployeeId(), 'customer_create', 'customer', $customer_id, "Created new customer: {$p['name']}");
+        
         $success = "Customer successfully registered! <a href='customer_view.php?id=" . $customer_id . "'>View customer details</a>";
         // Clear form data on success
         $form_data = [];

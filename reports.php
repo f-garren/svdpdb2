@@ -50,15 +50,6 @@ $visits_30_days = $stmt->fetch()['total'];
 $stmt = $db->query("SELECT COUNT(*) as total FROM visits WHERE visit_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND (is_invalid = 0 OR is_invalid IS NULL)");
 $visits_7_days = $stmt->fetch()['total'];
 
-// Top customers by visits (excluding invalid)
-$stmt = $db->query("SELECT c.name, c.phone, COUNT(v.id) as visit_count 
-                   FROM customers c 
-                   LEFT JOIN visits v ON c.id = v.customer_id AND (v.is_invalid = 0 OR v.is_invalid IS NULL)
-                   GROUP BY c.id 
-                   ORDER BY visit_count DESC 
-                   LIMIT 10");
-$top_customers = $stmt->fetchAll();
-
 // Monthly visit trends (excluding invalid)
 $stmt = $db->query("SELECT DATE_FORMAT(visit_date, '%Y-%m') as month, COUNT(*) as count 
                    FROM visits 
@@ -188,34 +179,6 @@ if (!empty($params)) {
                 <p>Visits (Last 7 Days)</p>
             </div>
         </div>
-    </div>
-
-    <div class="report-section">
-        <h2>Top Customers by Visit Count</h2>
-        <?php if (count($top_customers) > 0): ?>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Total Visits</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($top_customers as $index => $customer): ?>
-                        <tr>
-                            <td><?php echo $index + 1; ?></td>
-                            <td><?php echo htmlspecialchars($customer['name']); ?></td>
-                            <td><?php echo htmlspecialchars($customer['phone']); ?></td>
-                            <td><?php echo $customer['visit_count']; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p class="no-data">No visit data available.</p>
-        <?php endif; ?>
     </div>
 
     <div class="report-section">

@@ -82,11 +82,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_submit'])) {
         $notes = $p['notes'] ?? '';
         $stmt = $db->prepare("INSERT INTO visits (customer_id, visit_date, visit_type, notes) VALUES (?, ?, 'voucher', ?)");
         $stmt->execute([$customer_id, $visit_date, $notes]);
+        $visit_id = $db->lastInsertId();
         
         // Create voucher record
         $expiry_date = !empty($p['voucher_expiry_date']) ? date('Y-m-d', strtotime($p['voucher_expiry_date'])) : null;
         $stmt = $db->prepare("INSERT INTO vouchers (voucher_code, customer_id, amount, issued_date, expiry_date, notes) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$voucher_code, $customer_id, $voucher_amount, $visit_date, $expiry_date, $notes]);
+        $voucher_id = $db->lastInsertId();
+        
+        // Log audit
+        logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_create', 'voucher', $voucher_id, "Created voucher {$voucher_code} for customer ID {$customer_id}, amount: $" . number_format($voucher_amount, 2));
+        logEmployeeAction($db, getCurrentEmployeeId(), 'visit_create', 'visit', $visit_id, "Created voucher visit for customer ID {$customer_id}");
         
         $success = "Voucher created successfully! Voucher Code: <strong>{$voucher_code}</strong> - Amount: $" . number_format($voucher_amount, 2) . " <a href='customer_view.php?id=" . $customer_id . "'>View customer</a>";
         
@@ -150,7 +156,7 @@ include 'header.php';
                     <tr><th>Voucher Amount:</th><td>$<?php echo number_format(floatval($form_data['voucher_amount']), 2); ?></td></tr>
                     <?php endif; ?>
                     <?php if (!empty($form_data['voucher_expiry_date'])): ?>
-                    <tr><th>Expiry Date:</th><td><?php echo date('F d, Y', strtotime($form_data['voucher_expiry_date'])); ?></td></tr>
+                    <tr><th>Expiration Date:</th><td><?php echo date('F d, Y', strtotime($form_data['voucher_expiry_date'])); ?></td></tr>
                     <?php endif; ?>
                     <?php if (!empty($form_data['notes'])): ?>
                     <tr><th>Notes:</th><td><?php echo nl2br(htmlspecialchars($form_data['notes'])); ?></td></tr>
@@ -193,7 +199,7 @@ include 'header.php';
             </div>
 
             <div class="form-group">
-                <label for="voucher_expiry_date">Expiry Date (Optional)</label>
+                <label for="voucher_expiry_date">Expiration Date (Optional)</label>
                 <input type="date" id="voucher_expiry_date" name="voucher_expiry_date">
                 <small class="help-text">Leave empty for no expiration</small>
             </div>

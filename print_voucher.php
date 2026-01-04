@@ -142,7 +142,7 @@ $shop_name = getSetting('shop_name', 'Partner Store');
             </tr>
             <?php if ($voucher['expiry_date']): ?>
             <tr>
-                <td>Expiry Date:</td>
+                <td>Expiration Date:</td>
                 <td><?php echo date('F d, Y', strtotime($voucher['expiry_date'])); ?></td>
             </tr>
             <?php endif; ?>

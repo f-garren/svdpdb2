@@ -9,6 +9,9 @@ $search = $_GET['search'] ?? '';
 $filter_city = $_GET['city'] ?? '';
 $filter_state = $_GET['state'] ?? '';
 $filter_visit_date = $_GET['visit_date'] ?? '';
+$filter_visit_type = $_GET['visit_type'] ?? '';
+$filter_date_range = $_GET['date_range'] ?? '';
+$filter_visit_count = $_GET['visit_count'] ?? '';
 $customers = [];
 
 // Build query with filters
@@ -38,33 +41,133 @@ if (!empty($filter_state)) {
     $params[] = $filter_state;
 }
 
+if (!empty($filter_visit_type) && $filter_visit_type !== 'all') {
+    // This will be handled in the visit join query
+}
+
+if (!empty($filter_date_range)) {
+    // This will be handled in the visit join query
+    $date_range_days = 0;
+    switch ($filter_date_range) {
+        case '7':
+            $date_range_days = 7;
+            break;
+        case '30':
+            $date_range_days = 30;
+            break;
+        case '90':
+            $date_range_days = 90;
+            break;
+    }
+}
+
+if (!empty($filter_visit_count)) {
+    // This will be handled in the HAVING clause
+}
+
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
+// Build visit-related filters
+$visit_join_needed = !empty($filter_visit_date) || !empty($filter_visit_type) || !empty($filter_date_range) || !empty($filter_visit_count);
+$visit_conditions = [];
+$visit_params = [];
+
 if (!empty($filter_visit_date)) {
-    // Filter by customers who visited on a specific date (excluding invalid visits)
-    $base_query = "SELECT DISTINCT c.*, 
-                   (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
-                   FROM customers c 
-                   INNER JOIN visits v ON c.id = v.customer_id 
-                   WHERE DATE(v.visit_date) = ? AND (v.is_invalid = 0 OR v.is_invalid IS NULL)";
+    $visit_conditions[] = "DATE(v.visit_date) = ?";
+    $visit_params[] = $filter_visit_date;
+}
+
+if (!empty($filter_visit_type) && $filter_visit_type !== 'all') {
+    $visit_conditions[] = "v.visit_type = ?";
+    $visit_params[] = $filter_visit_type;
+}
+
+if (!empty($filter_date_range)) {
+    $date_range_days = 0;
+    switch ($filter_date_range) {
+        case '7':
+            $date_range_days = 7;
+            break;
+        case '30':
+            $date_range_days = 30;
+            break;
+        case '90':
+            $date_range_days = 90;
+            break;
+    }
+    if ($date_range_days > 0) {
+        $visit_conditions[] = "v.visit_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+        $visit_params[] = $date_range_days;
+    }
+}
+
+$visit_where = !empty($visit_conditions) ? " AND " . implode(" AND ", $visit_conditions) : "";
+
+if ($visit_join_needed) {
+    // Use JOIN query when visit filters are applied
+    $query = "SELECT DISTINCT c.*, 
+              (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
+              FROM customers c 
+              INNER JOIN visits v ON c.id = v.customer_id 
+              $where_clause
+              AND (v.is_invalid = 0 OR v.is_invalid IS NULL) $visit_where
+              GROUP BY c.id";
     
-    if (!empty($where_conditions)) {
-        $base_query = str_replace("WHERE DATE(v.visit_date) = ? AND (v.is_invalid = 0 OR v.is_invalid IS NULL)", "WHERE DATE(v.visit_date) = ? AND (v.is_invalid = 0 OR v.is_invalid IS NULL) AND " . implode(" AND ", $where_conditions), $base_query);
-        $params = array_merge([$filter_visit_date], $params);
-    } else {
-        $params = [$filter_visit_date];
+    // Handle visit_count filter
+    if (!empty($filter_visit_count)) {
+        if ($filter_visit_count === 'has_visits') {
+            // Already filtered by JOIN
+        } elseif ($filter_visit_count === 'no_visits') {
+            // Need to exclude customers with visits
+            $query = "SELECT DISTINCT c.*, 
+                     (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
+                     FROM customers c 
+                     $where_clause
+                     AND NOT EXISTS (SELECT 1 FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL))
+                     ORDER BY c.name LIMIT 200";
+            $all_params = $params;
+            if (!empty($all_params)) {
+                $stmt = $db->prepare($query);
+                $stmt->execute($all_params);
+                $customers = $stmt->fetchAll();
+            } else {
+                $stmt = $db->query($query);
+                $customers = $stmt->fetchAll();
+            }
+            $visit_join_needed = false; // Skip the rest of the logic
+        }
     }
     
-    $stmt = $db->prepare($base_query . " ORDER BY c.name");
-    $stmt->execute($params);
-    $customers = $stmt->fetchAll();
+    if ($visit_join_needed) {
+        $query .= " ORDER BY c.name LIMIT 200";
+        
+        $all_params = array_merge($params, $visit_params);
+        if (!empty($all_params)) {
+            $stmt = $db->prepare($query);
+            $stmt->execute($all_params);
+            $customers = $stmt->fetchAll();
+        } else {
+            $stmt = $db->query($query);
+            $customers = $stmt->fetchAll();
+        }
+    }
 } else {
+    // Standard query without visit filters
     $query = "SELECT c.*, 
               (SELECT COUNT(*) FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL)) as visit_count
               FROM customers c 
-              $where_clause
-              ORDER BY c.name 
-              LIMIT 200";
+              $where_clause";
+    
+    // Handle visit_count filter
+    if (!empty($filter_visit_count)) {
+        if ($filter_visit_count === 'has_visits') {
+            $query .= " AND EXISTS (SELECT 1 FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL))";
+        } elseif ($filter_visit_count === 'no_visits') {
+            $query .= " AND NOT EXISTS (SELECT 1 FROM visits WHERE customer_id = c.id AND (is_invalid = 0 OR is_invalid IS NULL))";
+        }
+    }
+    
+    $query .= " ORDER BY c.name LIMIT 200";
     
     if (!empty($params)) {
         $stmt = $db->prepare($query);
@@ -126,15 +229,44 @@ include 'header.php';
                 </div>
                 
                 <div class="filter-group">
+                    <label for="visit_type">Visit Type</label>
+                    <select name="visit_type" id="visit_type">
+                        <option value="all" <?php echo $filter_visit_type === 'all' || empty($filter_visit_type) ? 'selected' : ''; ?>>All Types</option>
+                        <option value="food" <?php echo $filter_visit_type === 'food' ? 'selected' : ''; ?>>Food</option>
+                        <option value="money" <?php echo $filter_visit_type === 'money' ? 'selected' : ''; ?>>Money</option>
+                        <option value="voucher" <?php echo $filter_visit_type === 'voucher' ? 'selected' : ''; ?>>Voucher</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date_range">Date Range</label>
+                    <select name="date_range" id="date_range">
+                        <option value="" <?php echo empty($filter_date_range) ? 'selected' : ''; ?>>All Time</option>
+                        <option value="7" <?php echo $filter_date_range === '7' ? 'selected' : ''; ?>>Last 7 Days</option>
+                        <option value="30" <?php echo $filter_date_range === '30' ? 'selected' : ''; ?>>Last 30 Days</option>
+                        <option value="90" <?php echo $filter_date_range === '90' ? 'selected' : ''; ?>>Last 90 Days</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
                     <label for="visit_date">Visited On Date</label>
                     <input type="date" name="visit_date" id="visit_date" value="<?php echo htmlspecialchars($filter_visit_date); ?>">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="visit_count">Visit Count</label>
+                    <select name="visit_count" id="visit_count">
+                        <option value="" <?php echo empty($filter_visit_count) ? 'selected' : ''; ?>>All</option>
+                        <option value="has_visits" <?php echo $filter_visit_count === 'has_visits' ? 'selected' : ''; ?>>Has Visits</option>
+                        <option value="no_visits" <?php echo $filter_visit_count === 'no_visits' ? 'selected' : ''; ?>>No Visits</option>
+                    </select>
                 </div>
                 
                 <div class="filter-group">
                     <label>&nbsp;</label>
                     <div>
                         <button type="submit" class="btn btn-primary">Filter</button>
-                        <?php if (!empty($search) || !empty($filter_city) || !empty($filter_state) || !empty($filter_visit_date)): ?>
+                        <?php if (!empty($search) || !empty($filter_city) || !empty($filter_state) || !empty($filter_visit_date) || !empty($filter_visit_type) || !empty($filter_date_range) || !empty($filter_visit_count)): ?>
                             <a href="customers.php" class="btn btn-secondary">Clear</a>
                         <?php endif; ?>
                     </div>

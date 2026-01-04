@@ -19,8 +19,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invalidate_visit'])) 
         $error = "Reason is required for invalidating a visit";
     } elseif ($visit_id > 0) {
         try {
+            // Get visit info for audit
+            $stmt = $db->prepare("SELECT visit_type, customer_id FROM visits WHERE id = ?");
+            $stmt->execute([$visit_id]);
+            $visit_info = $stmt->fetch();
+            
             $stmt = $db->prepare("UPDATE visits SET is_invalid = 1, invalid_reason = ?, invalidated_by = ?, invalidated_at = NOW() WHERE id = ? AND customer_id = ?");
             $stmt->execute([$reason, getCurrentEmployeeId(), $visit_id, $customer_id]);
+            
+            // Log audit
+            logEmployeeAction($db, getCurrentEmployeeId(), 'visit_invalidate', 'visit', $visit_id, "Invalidated {$visit_info['visit_type']} visit. Reason: {$reason}");
+            
             $success = "Visit marked as invalid successfully.";
         } catch (Exception $e) {
             $error = "Error invalidating visit: " . $e->getMessage();
@@ -35,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revoke_voucher'])) {
     if (!empty($voucher_code)) {
         try {
             // Check if voucher exists and is active
-            $stmt = $db->prepare("SELECT status, customer_id FROM vouchers WHERE voucher_code = ?");
+            $stmt = $db->prepare("SELECT id, status, customer_id FROM vouchers WHERE voucher_code = ?");
             $stmt->execute([$voucher_code]);
             $voucher = $stmt->fetch();
             
@@ -49,6 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revoke_voucher'])) {
                 // Revoke voucher by setting status to expired
                 $stmt = $db->prepare("UPDATE vouchers SET status = 'expired' WHERE voucher_code = ?");
                 $stmt->execute([$voucher_code]);
+                
+                // Log audit
+                logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_revoke', 'voucher', $voucher['id'], "Revoked voucher {$voucher_code}");
+                
                 $success = "Voucher {$voucher_code} has been revoked successfully.";
             }
         } catch (Exception $e) {
@@ -878,9 +891,9 @@ include 'header.php';
                                                     <span style="color: green;">Valid</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td style="white-space: nowrap;">
                                                 <?php if (!$visit['is_invalid']): ?>
-                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white; margin-right: 0.5rem;">Invalidate</button>
                                                     <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
                                                 <?php else: ?>
                                                     <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
@@ -930,9 +943,9 @@ include 'header.php';
                                                     <span style="color: green;">Valid</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td style="white-space: nowrap;">
                                                 <?php if (!$visit['is_invalid']): ?>
-                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white; margin-right: 0.5rem;">Invalidate</button>
                                                     <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
                                                 <?php else: ?>
                                                     <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
@@ -1042,24 +1055,21 @@ include 'header.php';
                                                     </div>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td style="white-space: nowrap;">
                                                 <?php if (!$visit['is_invalid']): ?>
                                                     <?php if (isset($voucher_details[$visit['id']]) && $voucher_details[$visit['id']]['status'] === 'active'): ?>
-                                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to revoke this voucher? This action cannot be undone.');">
+                                                        <form method="POST" action="" style="display: inline; margin-right: 0.5rem;" onsubmit="return confirm('Are you sure you want to revoke this voucher? This action cannot be undone.');">
                                                             <input type="hidden" name="voucher_code" value="<?php echo htmlspecialchars($voucher_details[$visit['id']]['voucher_code']); ?>">
                                                             <button type="submit" name="revoke_voucher" class="btn btn-small" style="background-color: #d32f2f; color: white;">Revoke</button>
                                                         </form>
                                                     <?php endif; ?>
-                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
                                                     <?php if (isset($voucher_details[$visit['id']])): ?>
                                                         <a href="print_voucher.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" target="_blank" class="btn btn-small">Print</a>
                                                     <?php endif; ?>
-                                                    <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print Visit</a>
                                                 <?php else: ?>
                                                     <?php if (isset($voucher_details[$visit['id']])): ?>
                                                         <a href="print_voucher.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" target="_blank" class="btn btn-small">Print</a>
                                                     <?php endif; ?>
-                                                    <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print Visit</a>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
@@ -1160,7 +1170,7 @@ function showInvalidateVisit(visitId) {
 
 .action-dropdown button {
     cursor: pointer;
-    border: none;
+    border: var(--border-width) var(--border-style) var(--accent-color);
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
