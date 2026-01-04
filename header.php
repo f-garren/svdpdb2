@@ -79,7 +79,7 @@
                 echo 'rgb(' . round($muted['r']) . ', ' . round($muted['g']) . ', ' . round($muted['b']) . ')'; 
             ?>;
             --border-color: <?php echo htmlspecialchars(getSetting('theme_border_color', '#c4b5a0')); ?>;
-            --pattern-opacity: <?php echo floatval(getSetting('theme_pattern_opacity', '0.05')); ?>;
+            --pattern-opacity: <?php echo floatval(getSetting('theme_pattern_opacity', '0.2')); ?>;
             --pattern-size: <?php echo intval(getSetting('theme_pattern_size', '40')); ?>px;
             --border-width: <?php echo intval(getSetting('theme_border_width', '3')); ?>px;
             <?php 

@@ -21,7 +21,7 @@ $theme_text_color = getSetting('theme_text_color', '#2c2416');
 $theme_border_color = getSetting('theme_border_color', '#c4b5a0');
 $theme_font_primary = getSetting('theme_font_primary', 'Montserrat');
 $theme_font_decorative = getSetting('theme_font_decorative', 'Playfair Display');
-$theme_pattern_opacity = getSetting('theme_pattern_opacity', '0.05');
+$theme_pattern_opacity = getSetting('theme_pattern_opacity', '0.2');
 $theme_pattern_size = getSetting('theme_pattern_size', '40');
 $theme_border_width = getSetting('theme_border_width', '3');
 $voucher_prefix = getSetting('voucher_prefix', 'VCH-');
@@ -421,7 +421,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['create_backup']) && 
         $theme_border_color = getSetting('theme_border_color', '#c4b5a0');
         $theme_font_primary = getSetting('theme_font_primary', 'Montserrat');
         $theme_font_decorative = getSetting('theme_font_decorative', 'Playfair Display');
-        $theme_pattern_opacity = getSetting('theme_pattern_opacity', '0.05');
+        $theme_pattern_opacity = getSetting('theme_pattern_opacity', '0.2');
         $theme_pattern_size = getSetting('theme_pattern_size', '40');
         $theme_border_width = getSetting('theme_border_width', '3');
         $voucher_prefix = getSetting('voucher_prefix', 'VCH-');
@@ -755,7 +755,7 @@ include 'header.php';
                             <div class="form-group">
                                 <label for="theme_pattern_opacity">Background Pattern Opacity</label>
                                 <input type="range" id="theme_pattern_opacity" name="theme_pattern_opacity" min="0" max="0.2" step="0.01" value="<?php echo htmlspecialchars($theme_pattern_opacity); ?>" oninput="document.getElementById('pattern_opacity_value').textContent = this.value">
-                                <small class="help-text">Opacity of the geometric background pattern: <span id="pattern_opacity_value"><?php echo htmlspecialchars($theme_pattern_opacity); ?></span> (default: 0.05)</small>
+                                <small class="help-text">Opacity of the geometric background pattern: <span id="pattern_opacity_value"><?php echo htmlspecialchars($theme_pattern_opacity); ?></span> (default: 0.2, max)</small>
                             </div>
                             
                             <div class="form-group">

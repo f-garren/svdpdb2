@@ -94,16 +94,16 @@ $page_title = "Login";
                 echo 'rgb(' . round($muted['r']) . ', ' . round($muted['g']) . ', ' . round($muted['b']) . ')'; 
             ?>;
             --border-width: <?php echo intval(getSetting('theme_border_width', '3')); ?>px;
-            --pattern-opacity: <?php echo floatval(getSetting('theme_pattern_opacity', '0.05')); ?>;
+            --pattern-opacity: <?php echo floatval(getSetting('theme_pattern_opacity', '0.2')); ?>;
             --pattern-size: <?php echo intval(getSetting('theme_pattern_size', '40')); ?>px;
             --bg-pattern: <?php 
                 $bg = hex2rgb(getSetting('theme_bg_color', '#f5f3f0'));
-                $pattern = [
+                $darker = [
                     'r' => max(0, $bg['r'] - 20),
                     'g' => max(0, $bg['g'] - 20),
                     'b' => max(0, $bg['b'] - 20)
                 ];
-                echo 'rgba(' . $pattern['r'] . ', ' . $pattern['g'] . ', ' . $pattern['b'] . ', 0.3)'; 
+                echo 'rgb(' . $darker['r'] . ', ' . $darker['g'] . ', ' . $darker['b'] . ')'; 
             ?>;
             <?php 
             $font_primary = getSetting('theme_font_primary', 'Montserrat');
