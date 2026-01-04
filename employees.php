@@ -6,7 +6,7 @@ requireAdmin();
 
 $db = getDB();
 $error = '';
-$success = '';
+$success = $_GET['success'] ?? '';
 
 // Handle employee creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_employee'])) {
@@ -45,12 +45,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_employee'])) {
                 }
             }
             
-            $db->commit();
-            
             // Log audit
             logEmployeeAction($db, getCurrentEmployeeId(), 'employee_create', 'employee', $employee_id, "Created employee: {$username} ({$full_name}), role: " . ($is_admin ? 'Admin' : 'Employee'));
             
-            $success = "Employee created successfully!";
+            $db->commit();
+            
+            // Redirect to prevent form resubmission
+            header('Location: employees.php?success=' . urlencode('Employee created successfully!'));
+            exit;
         } catch (Exception $e) {
             $db->rollBack();
             $error = "Error creating employee: " . $e->getMessage();
@@ -142,25 +144,38 @@ $employees = $db->query("SELECT e.*,
     (SELECT GROUP_CONCAT(permission) FROM employee_permissions WHERE employee_id = e.id) as permissions
     FROM employees e 
     WHERE e.is_active = 1
-    ORDER BY e.created_at DESC")->fetchAll();
+    ORDER BY e.created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get inactive employees
 $inactive_employees = $db->query("SELECT e.*, 
     (SELECT GROUP_CONCAT(permission) FROM employee_permissions WHERE employee_id = e.id) as permissions
     FROM employees e 
     WHERE e.is_active = 0
-    ORDER BY e.created_at DESC")->fetchAll();
+    ORDER BY e.created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 
-// Get permissions for each employee
+// Format permissions for each employee
 foreach ($employees as &$emp) {
     if ($emp['is_admin']) {
-        $emp['permissions'] = 'All (Admin)';
+        $emp['permissions'] = 'All Permissions (Admin)';
     } elseif ($emp['permissions']) {
         $emp['permissions'] = str_replace(',', ', ', $emp['permissions']);
     } else {
-        $emp['permissions'] = 'None';
+        $emp['permissions'] = 'No Permissions';
     }
 }
+unset($emp); // Break reference
+
+// Format permissions for inactive employees
+foreach ($inactive_employees as &$emp) {
+    if ($emp['is_admin']) {
+        $emp['permissions'] = 'All Permissions (Admin)';
+    } elseif ($emp['permissions']) {
+        $emp['permissions'] = str_replace(',', ', ', $emp['permissions']);
+    } else {
+        $emp['permissions'] = 'No Permissions';
+    }
+}
+unset($emp); // Break reference
 
 $page_title = "Employee Management";
 include 'header.php';
@@ -261,12 +276,12 @@ include 'header.php';
     <div class="report-section">
         <h2>Existing Employees</h2>
         <?php if (count($employees) > 0): ?>
+            <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Username</th>
                         <th>Full Name</th>
-                        <th>Role</th>
                         <th>Permissions</th>
                         <th>Status</th>
                         <th>Last Login</th>
@@ -278,8 +293,7 @@ include 'header.php';
                         <tr>
                             <td><?php echo htmlspecialchars($emp['username']); ?></td>
                             <td><?php echo htmlspecialchars($emp['full_name']); ?></td>
-                            <td><?php echo $emp['is_admin'] ? '<strong>Admin</strong>' : 'Employee'; ?></td>
-                            <td><?php echo htmlspecialchars($emp['permissions']); ?></td>
+                            <td><?php echo htmlspecialchars($emp['permissions'] ?: ($emp['is_admin'] ? 'All Permissions (Admin)' : 'No Permissions')); ?></td>
                             <td>
                                 <span style="color: green;">Active</span>
                             </td>
@@ -298,6 +312,7 @@ include 'header.php';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php else: ?>
             <p class="no-data">No active employees found.</p>
         <?php endif; ?>
@@ -313,12 +328,12 @@ include 'header.php';
             <ion-icon name="chevron-down" id="inactive-employees-toggle-icon"></ion-icon>
         </button>
         <div id="inactive-employees-list" style="display: none; margin-top: 1rem;">
+            <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Username</th>
                         <th>Full Name</th>
-                        <th>Role</th>
                         <th>Permissions</th>
                         <th>Last Login</th>
                         <th>Actions</th>
@@ -329,8 +344,7 @@ include 'header.php';
                         <tr style="opacity: 0.7;">
                             <td><?php echo htmlspecialchars($emp['username']); ?></td>
                             <td><?php echo htmlspecialchars($emp['full_name']); ?></td>
-                            <td><?php echo $emp['is_admin'] ? '<strong>Admin</strong>' : 'Employee'; ?></td>
-                            <td><?php echo htmlspecialchars($emp['permissions']); ?></td>
+                            <td><?php echo htmlspecialchars($emp['permissions'] ?: ($emp['is_admin'] ? 'All Permissions (Admin)' : 'No Permissions')); ?></td>
                             <td><?php echo $emp['last_login'] ? date('M d, Y g:i A', strtotime($emp['last_login'])) : 'Never'; ?></td>
                             <td style="white-space: nowrap;">
                                 <button type="button" class="btn btn-small" onclick="showEmployeeAudit(<?php echo $emp['id']; ?>, '<?php echo htmlspecialchars($emp['username'], ENT_QUOTES); ?>')">View Audit</button>
@@ -343,6 +357,7 @@ include 'header.php';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
     <?php endif; ?>

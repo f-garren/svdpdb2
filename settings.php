@@ -56,7 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_backup'])) {
         exec($command, $output, $return_code);
         
         if ($return_code === 0 && file_exists($backup_path)) {
-            $success = "Backup created successfully: {$backup_filename}";
+            // Redirect to backup section
+            header('Location: settings.php#category-backup');
+            exit;
         } else {
             $error = "Failed to create backup. " . implode("\n", $output);
         }
@@ -577,19 +579,20 @@ include 'header.php';
                             <div class="form-group">
                                 <label for="visits_per_month_limit">Food Visits Per Month Limit</label>
                                 <input type="number" id="visits_per_month_limit" name="visits_per_month_limit" value="<?php echo $visits_per_month; ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="visits_per_year_limit">Food Visits Per Year Limit</label>
                                 <input type="number" id="visits_per_year_limit" name="visits_per_year_limit" value="<?php echo $visits_per_year; ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="min_days_between_visits">Minimum Days Between Food Visits</label>
                                 <input type="number" id="min_days_between_visits" name="min_days_between_visits" value="<?php echo $min_days_between; ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <small class="help-text">Note: Use -1 for unlimited visits, any other number sets the limit.</small>
                             </div>
                         </div>
                         
@@ -639,7 +642,10 @@ include 'header.php';
                             <div class="form-group">
                                 <label for="voucher_min_days_between">Minimum Days Between Voucher Visits</label>
                                 <input type="number" id="voucher_min_days_between" name="voucher_min_days_between" value="<?php echo intval(getSetting('voucher_min_days_between', -1)); ?>" min="-1" required>
-                                <small class="help-text">Use -1 for unlimited, any other number for the limit</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <small class="help-text">Note: Use -1 for unlimited visits, any other number sets the limit.</small>
                             </div>
                         </div>
                     </div>
@@ -857,22 +863,24 @@ include 'header.php';
                                                 <td><?php echo htmlspecialchars($backup['name']); ?></td>
                                                 <td><?php echo date('Y-m-d H:i:s', $backup['date']); ?></td>
                                                 <td><?php echo number_format($backup['size'] / 1024, 2); ?> KB</td>
-                                                <td style="white-space: nowrap;">
-                                                    <a href="?download_backup=<?php echo urlencode($backup['name']); ?>" class="btn btn-small btn-primary" style="margin-right: 0.5rem;">
-                                                        <ion-icon name="download-outline"></ion-icon> Download
-                                                    </a>
-                                                    <form method="POST" action="" style="display: inline; margin-right: 0.5rem;" onsubmit="return confirm('Are you sure you want to restore this backup? This will replace all current data.');">
-                                                        <input type="hidden" name="restore_from_list" value="<?php echo htmlspecialchars($backup['name']); ?>">
-                                                        <button type="submit" name="restore_backup" class="btn btn-small" style="background-color: var(--primary-color); color: white;">
-                                                            <ion-icon name="refresh"></ion-icon> Restore
-                                                        </button>
-                                                    </form>
-                                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this backup?');">
-                                                        <input type="hidden" name="delete_backup" value="<?php echo htmlspecialchars($backup['name']); ?>">
-                                                        <button type="submit" class="btn btn-small" style="background-color: var(--danger-color); color: white;">
-                                                            <ion-icon name="trash"></ion-icon> Delete
-                                                        </button>
-                                                    </form>
+                                                <td>
+                                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                        <a href="?download_backup=<?php echo urlencode($backup['name']); ?>" class="btn btn-small btn-primary">
+                                                            <ion-icon name="download-outline"></ion-icon> Download
+                                                        </a>
+                                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to restore this backup? This will replace all current data.');">
+                                                            <input type="hidden" name="restore_from_list" value="<?php echo htmlspecialchars($backup['name']); ?>">
+                                                            <button type="submit" name="restore_backup" class="btn btn-small" style="background-color: var(--primary-color); color: white;">
+                                                                <ion-icon name="refresh"></ion-icon> Restore
+                                                            </button>
+                                                        </form>
+                                                        <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this backup?');">
+                                                            <input type="hidden" name="delete_backup" value="<?php echo htmlspecialchars($backup['name']); ?>">
+                                                            <button type="submit" class="btn btn-small" style="background-color: var(--danger-color); color: white;">
+                                                                <ion-icon name="trash"></ion-icon> Delete
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -929,19 +937,20 @@ include 'header.php';
                     <div class="form-group">
                         <label for="visits_per_month_limit">Visits Per Month Limit</label>
                         <input type="number" id="visits_per_month_limit" name="visits_per_month_limit" value="<?php echo $visits_per_month; ?>" min="-1" required>
-                        <small class="help-text">Use -1 for unlimited, 0 to disable</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="visits_per_year_limit">Visits Per Year Limit</label>
                         <input type="number" id="visits_per_year_limit" name="visits_per_year_limit" value="<?php echo $visits_per_year; ?>" min="-1" required>
-                        <small class="help-text">Use -1 for unlimited, 0 to disable</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="min_days_between_visits">Minimum Days Between Visits</label>
                         <input type="number" id="min_days_between_visits" name="min_days_between_visits" value="<?php echo $min_days_between; ?>" min="-1" required>
-                        <small class="help-text">Use -1 for unlimited, 0 to disable</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <small class="help-text">Note: Use -1 for unlimited visits, any other number sets the limit.</small>
                     </div>
                 </div>
                 

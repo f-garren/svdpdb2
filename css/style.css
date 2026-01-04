@@ -66,7 +66,7 @@ body::after {
         repeating-linear-gradient(45deg, transparent, transparent 35px, var(--bg-pattern) 35px, var(--bg-pattern) 70px),
         repeating-linear-gradient(-45deg, transparent, transparent 35px, var(--bg-pattern) 35px, var(--bg-pattern) 70px);
     background-size: var(--pattern-size) var(--pattern-size);
-    opacity: 0.7;
+    opacity: var(--pattern-opacity);
     pointer-events: none;
     z-index: -1;
 }
@@ -170,6 +170,7 @@ body > * {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 
@@ -180,6 +181,8 @@ body > * {
     align-items: center;
     margin: 0;
     padding: 0;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .nav-menu li {
@@ -1244,6 +1247,8 @@ ion-icon {
     border: var(--border-width) var(--border-style) var(--accent-color);
     box-shadow: var(--shadow);
     margin-bottom: 2rem;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .report-section h2 {
@@ -1367,8 +1372,19 @@ ion-icon {
 /* Responsive */
 @media (max-width: 768px) {
     .nav-menu {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 0.5rem;
+        justify-content: center;
+    }
+    
+    .nav-menu li {
+        flex: 0 1 auto;
+    }
+    
+    .nav-menu a {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
     }
     
     .stats-grid {

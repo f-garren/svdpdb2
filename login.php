@@ -94,8 +94,23 @@ $page_title = "Login";
                 echo 'rgb(' . round($muted['r']) . ', ' . round($muted['g']) . ', ' . round($muted['b']) . ')'; 
             ?>;
             --border-width: <?php echo intval(getSetting('theme_border_width', '3')); ?>px;
-            --font-primary: '<?php echo htmlspecialchars(getSetting('theme_font_primary', 'Montserrat')); ?>', 'Arial Black', 'Arial Bold', Arial, sans-serif;
-            --font-decorative: '<?php echo htmlspecialchars(getSetting('theme_font_decorative', 'Playfair Display')); ?>', 'Times New Roman', serif;
+            --pattern-opacity: <?php echo floatval(getSetting('theme_pattern_opacity', '0.05')); ?>;
+            --pattern-size: <?php echo intval(getSetting('theme_pattern_size', '40')); ?>px;
+            --bg-pattern: <?php 
+                $bg = hex2rgb(getSetting('theme_bg_color', '#f5f3f0'));
+                $pattern = [
+                    'r' => max(0, $bg['r'] - 20),
+                    'g' => max(0, $bg['g'] - 20),
+                    'b' => max(0, $bg['b'] - 20)
+                ];
+                echo 'rgba(' . $pattern['r'] . ', ' . $pattern['g'] . ', ' . $pattern['b'] . ', 0.3)'; 
+            ?>;
+            <?php 
+            $font_primary = getSetting('theme_font_primary', 'Montserrat');
+            $font_decorative = getSetting('theme_font_decorative', 'Playfair Display');
+            ?>
+            --font-primary: '<?php echo htmlspecialchars($font_primary); ?>', 'Arial Black', 'Arial Bold', Arial, sans-serif;
+            --font-decorative: '<?php echo htmlspecialchars($font_decorative); ?>', 'Times New Roman', serif;
         }
         .login-container {
             display: flex;

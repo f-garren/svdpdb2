@@ -60,26 +60,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redeem_voucher']) && $voucher_info && $voucher_info['status'] === 'active') {
-    // Validate redeemed_by field
-    $redeemed_by = trim($_POST['redeemed_by'] ?? '');
-    if (empty($redeemed_by)) {
-        $error = "Please enter the store clerk name.";
-    } else {
-        try {
-            // Mark voucher as redeemed
-            $stmt = $db->prepare("UPDATE vouchers SET status = 'redeemed', redeemed_date = NOW(), redeemed_by = ? WHERE voucher_code = ?");
-            $stmt->execute([$redeemed_by, $voucher_code]);
-            
-            // Log audit
-            $voucher_id = $voucher_info['id'] ?? null;
-            logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_redeem', 'voucher', $voucher_id, "Redeemed voucher {$voucher_code} by {$redeemed_by}, amount: $" . number_format($voucher_info['amount'], 2));
-            
-            $success = "Voucher redeemed successfully! Amount: $" . number_format($voucher_info['amount'], 2);
-            $voucher_info = null; // Clear for new search
-            $voucher_code = '';
-        } catch (Exception $e) {
-            $error = "Error redeeming voucher: " . $e->getMessage();
-        }
+    try {
+        // Automatically use logged-in employee's name
+        $redeemed_by = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Unknown';
+        
+        // Mark voucher as redeemed
+        $stmt = $db->prepare("UPDATE vouchers SET status = 'redeemed', redeemed_date = NOW(), redeemed_by = ? WHERE voucher_code = ?");
+        $stmt->execute([$redeemed_by, $voucher_code]);
+        
+        // Log audit
+        $voucher_id = $voucher_info['id'] ?? null;
+        logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_redeem', 'voucher', $voucher_id, "Redeemed voucher {$voucher_code} by {$redeemed_by}, amount: $" . number_format($voucher_info['amount'], 2));
+        
+        $success = "Voucher redeemed successfully! Amount: $" . number_format($voucher_info['amount'], 2);
+        $voucher_info = null; // Clear for new search
+        $voucher_code = '';
+    } catch (Exception $e) {
+        $error = "Error redeeming voucher: " . $e->getMessage();
     }
 }
 
@@ -222,11 +219,6 @@ include 'header.php';
             
             <form method="POST" action="" style="margin-top: 1.5rem;">
                 <input type="hidden" name="voucher_code" value="<?php echo htmlspecialchars($voucher_code); ?>">
-                <div class="form-group">
-                    <label for="redeemed_by">Redeemed By (Store Clerk Name) <span class="required">*</span></label>
-                    <input type="text" id="redeemed_by" name="redeemed_by" value="<?php echo htmlspecialchars($_SESSION['full_name'] ?? getCurrentEmployee()['full_name'] ?? ''); ?>" placeholder="Enter your name" required>
-                    <small class="help-text">This field is required</small>
-                </div>
                 <div class="form-actions">
                     <button type="submit" name="redeem_voucher" class="btn btn-primary btn-large">Redeem Voucher</button>
                     <a href="voucher_redemption.php" class="btn btn-secondary btn-large">Cancel</a>

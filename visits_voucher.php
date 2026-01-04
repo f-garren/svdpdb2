@@ -94,12 +94,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_submit'])) {
         logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_create', 'voucher', $voucher_id, "Created voucher {$voucher_code} for customer ID {$customer_id}, amount: $" . number_format($voucher_amount, 2));
         logEmployeeAction($db, getCurrentEmployeeId(), 'visit_create', 'visit', $visit_id, "Created voucher visit for customer ID {$customer_id}");
         
-        $success = "Voucher created successfully! Voucher Code: <strong>{$voucher_code}</strong> - Amount: $" . number_format($voucher_amount, 2) . " <a href='customer_view.php?id=" . $customer_id . "'>View customer</a>";
-        
-        // Clear customer selection
-        $customer = null;
-        $customer_id = 0;
-        $show_confirmation = false;
+        // Redirect to customer view
+        header('Location: customer_view.php?id=' . $customer_id);
+        exit;
         
     } catch (Exception $e) {
         $error = $e->getMessage();

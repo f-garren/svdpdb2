@@ -891,13 +891,15 @@ include 'header.php';
                                                     <span style="color: green;">Valid</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td style="white-space: nowrap;">
-                                                <?php if (!$visit['is_invalid']): ?>
-                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white; margin-right: 0.5rem;">Invalidate</button>
-                                                    <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
-                                                <?php else: ?>
-                                                    <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
-                                                <?php endif; ?>
+                                            <td>
+                                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                    <?php if (!$visit['is_invalid']): ?>
+                                                        <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                        <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
+                                                    <?php else: ?>
+                                                        <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
+                                                    <?php endif; ?>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -943,13 +945,15 @@ include 'header.php';
                                                     <span style="color: green;">Valid</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td style="white-space: nowrap;">
-                                                <?php if (!$visit['is_invalid']): ?>
-                                                    <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white; margin-right: 0.5rem;">Invalidate</button>
-                                                    <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
-                                                <?php else: ?>
-                                                    <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
-                                                <?php endif; ?>
+                                            <td>
+                                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                    <?php if (!$visit['is_invalid']): ?>
+                                                        <button type="button" class="btn btn-small" onclick="showInvalidateVisit(<?php echo $visit['id']; ?>)" style="background-color: #d32f2f; color: white;">Invalidate</button>
+                                                        <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
+                                                    <?php else: ?>
+                                                        <a href="print_visit.php?id=<?php echo $visit['id']; ?>" target="_blank" class="btn btn-small">Print</a>
+                                                    <?php endif; ?>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -1055,22 +1059,19 @@ include 'header.php';
                                                     </div>
                                                 <?php endif; ?>
                                             </td>
-                                            <td style="white-space: nowrap;">
-                                                <?php if (!$visit['is_invalid']): ?>
-                                                    <?php if (isset($voucher_details[$visit['id']]) && $voucher_details[$visit['id']]['status'] === 'active'): ?>
-                                                        <form method="POST" action="" style="display: inline; margin-right: 0.5rem;" onsubmit="return confirm('Are you sure you want to revoke this voucher? This action cannot be undone.');">
-                                                            <input type="hidden" name="voucher_code" value="<?php echo htmlspecialchars($voucher_details[$visit['id']]['voucher_code']); ?>">
-                                                            <button type="submit" name="revoke_voucher" class="btn btn-small" style="background-color: #d32f2f; color: white;">Revoke</button>
-                                                        </form>
-                                                    <?php endif; ?>
+                                            <td>
+                                                <div style="display: flex; gap: 0.5rem; align-items: center;">
                                                     <?php if (isset($voucher_details[$visit['id']])): ?>
-                                                        <a href="print_voucher.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" target="_blank" class="btn btn-small">Print</a>
+                                                        <?php if ($voucher_details[$visit['id']]['status'] === 'active'): ?>
+                                                            <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to revoke this voucher?');">
+                                                                <input type="hidden" name="voucher_code" value="<?php echo htmlspecialchars($voucher_details[$visit['id']]['voucher_code']); ?>">
+                                                                <button type="submit" name="revoke_voucher" class="btn btn-small" style="background-color: #d32f2f; color: white;">Revoke</button>
+                                                            </form>
+                                                            <a href="voucher_redemption.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" class="btn btn-small" style="background-color: var(--success-color); color: white;">Redeem</a>
+                                                        <?php endif; ?>
+                                                        <a href="print_voucher.php?id=<?php echo $voucher_details[$visit['id']]['id']; ?>" target="_blank" class="btn btn-small">Print</a>
                                                     <?php endif; ?>
-                                                <?php else: ?>
-                                                    <?php if (isset($voucher_details[$visit['id']])): ?>
-                                                        <a href="print_voucher.php?code=<?php echo urlencode($voucher_details[$visit['id']]['voucher_code']); ?>" target="_blank" class="btn btn-small">Print</a>
-                                                    <?php endif; ?>
-                                                <?php endif; ?>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
