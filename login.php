@@ -5,6 +5,22 @@ require_once 'auth.php';
 $error = '';
 $success = '';
 
+// Check if admin has changed password (to hide default credentials message)
+$show_default_credentials = true;
+try {
+    $db = getDB();
+    $stmt = $db->prepare("SELECT force_password_reset FROM employees WHERE username = 'admin' AND is_admin = 1 LIMIT 1");
+    $stmt->execute();
+    $admin = $stmt->fetch();
+    if ($admin && $admin['force_password_reset'] == 0) {
+        // Admin has changed password, hide the message
+        $show_default_credentials = false;
+    }
+} catch (Exception $e) {
+    // If there's an error checking, show the message just in case
+    $show_default_credentials = true;
+}
+
 // Redirect if already logged in
 if (isLoggedIn() && !requiresPasswordReset()) {
     header('Location: index.php');
@@ -226,10 +242,12 @@ $page_title = "Login";
                 </div>
             </form>
             
+            <?php if ($show_default_credentials): ?>
             <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem; color: #666;">
                 <p>Default admin: <strong>admin</strong> / <strong>admin</strong></p>
                 <p style="font-size: 0.8rem; color: #999;">(Change password on first login)</p>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 </body>

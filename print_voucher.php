@@ -27,6 +27,7 @@ $shop_name = getSetting('shop_name', 'Partner Store');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voucher Receipt - <?php echo htmlspecialchars($organization_name); ?></title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         @media print {
             body { margin: 0; }
@@ -101,6 +102,21 @@ $shop_name = getSetting('shop_name', 'Partner Store');
             margin: 1rem 0;
             text-align: center;
         }
+        .barcode-container {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 1rem;
+        }
+        .barcode-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+        .barcode-label {
+            margin-top: 0.5rem;
+            font-size: 14pt;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+        }
     </style>
 </head>
 <body>
@@ -116,6 +132,11 @@ $shop_name = getSetting('shop_name', 'Partner Store');
 
     <div class="voucher-code">
         <?php echo htmlspecialchars($voucher['voucher_code']); ?>
+    </div>
+
+    <div class="barcode-container">
+        <svg id="barcode"></svg>
+        <div class="barcode-label"><?php echo htmlspecialchars($voucher['voucher_code']); ?></div>
     </div>
 
     <div class="voucher-amount">
@@ -190,6 +211,17 @@ $shop_name = getSetting('shop_name', 'Partner Store');
         <p>Generated on <?php echo date('F d, Y \a\t g:i A'); ?></p>
         <p><?php echo htmlspecialchars($organization_name); ?></p>
     </div>
+
+    <script>
+        // Generate barcode with voucher code
+        JsBarcode("#barcode", "<?php echo htmlspecialchars($voucher['voucher_code'], ENT_QUOTES); ?>", {
+            format: "CODE128",
+            width: 2,
+            height: 80,
+            displayValue: false,
+            margin: 10
+        });
+    </script>
 </body>
 </html>
 
