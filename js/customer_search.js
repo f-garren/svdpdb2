@@ -35,13 +35,29 @@ function initCustomerSearch(searchInputId, customerIdInputId, resultsDivId, visi
                     data.forEach(customer => {
                         const div = document.createElement('div');
                         div.className = 'customer-result';
+                        
+                        // Handle household member matches with styling
+                        let displayName;
+                        if (customer.is_household_match && customer.household_member_name) {
+                            // Household member match: bold household member, italics primary customer
+                            displayName = `<strong>${escapeHtml(customer.household_member_name)}</strong> <em>(${escapeHtml(customer.name)})</em>`;
+                        } else {
+                            // Regular customer match
+                            displayName = `<strong>${escapeHtml(customer.name)}</strong>`;
+                        }
+                        
                         div.innerHTML = `
-                            <strong>${customer.name}</strong><br>
-                            <small>${customer.phone} - ${customer.city || ''}, ${customer.state || ''}</small>
+                            ${displayName}<br>
+                            <small>${escapeHtml(customer.phone || '')} - ${escapeHtml(customer.city || '')}, ${escapeHtml(customer.state || '')}</small>
                         `;
                         div.addEventListener('click', () => {
                             customerIdInput.value = customer.id;
-                            customerSearch.value = customer.name;
+                            // Set input value based on match type
+                            if (customer.is_household_match && customer.household_member_name) {
+                                customerSearch.value = customer.household_member_name;
+                            } else {
+                                customerSearch.value = customer.name;
+                            }
                             customerResults.innerHTML = '';
                             if (eligibilityDivId && visitType) {
                                 checkEligibility(customer.id, visitType, eligibilityDivId);
@@ -77,6 +93,45 @@ function checkEligibility(customerId, visitType, errorDivId) {
             }
         })
         .catch(error => console.error('Eligibility check error:', error));
+}
+
+function displayCustomerInfo(customer, customerIdInputId, eligibilityDivId, visitType) {
+    const customerInfoDiv = document.getElementById('customer_info');
+    if (!customerInfoDiv) return;
+    
+    let html = `<strong>Selected:</strong> ${escapeHtml(customer.name)} (${escapeHtml(customer.phone || '')})`;
+    
+    // Add household members if they exist
+    if (customer.household_members && customer.household_members.length > 0) {
+        html += '<div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">';
+        html += '<strong>Household Members:</strong><ul style="margin: 0.25rem 0 0 1.5rem; padding: 0;">';
+        customer.household_members.forEach(member => {
+            html += `<li><em>${escapeHtml(member.name)}</em>`;
+            if (member.relationship) {
+                html += ` (${escapeHtml(member.relationship)})`;
+            }
+            html += '</li>';
+        });
+        html += '</ul></div>';
+    }
+    
+    if (eligibilityDivId) {
+        html += `<div id="${eligibilityDivId}" style="margin-top: 0.5rem;"></div>`;
+    }
+    
+    customerInfoDiv.innerHTML = html;
+    
+    // Check eligibility if needed
+    if (eligibilityDivId && visitType) {
+        checkEligibility(customer.id, visitType, eligibilityDivId);
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function initDateTimeOverride(checkboxId, autoDivId, manualDivId, inputId) {

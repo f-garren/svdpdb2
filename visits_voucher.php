@@ -13,10 +13,17 @@ $db = getDB();
 
 // Get customer if ID provided
 $customer = null;
+$household_members = [];
 if ($customer_id) {
     $stmt = $db->prepare("SELECT * FROM customers WHERE id = ?");
     $stmt->execute([$customer_id]);
     $customer = $stmt->fetch();
+    if ($customer) {
+        // Get household members
+        $stmt = $db->prepare("SELECT name, birthdate, relationship FROM household_members WHERE customer_id = ? ORDER BY name");
+        $stmt->execute([$customer_id]);
+        $household_members = $stmt->fetchAll();
+    }
 }
 
 // Handle confirmation submission (final save)
@@ -186,6 +193,16 @@ include 'header.php';
                 <div class="selected-customer" id="customer_info">
                     <strong>Selected:</strong> <?php echo htmlspecialchars($customer['name']); ?> 
                     (<?php echo htmlspecialchars($customer['phone']); ?>)
+                    <?php if (!empty($household_members)): ?>
+                        <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                            <strong>Household Members:</strong>
+                            <ul style="margin: 0.25rem 0 0 1.5rem; padding: 0;">
+                                <?php foreach ($household_members as $member): ?>
+                                    <li><em><?php echo htmlspecialchars($member['name']); ?></em><?php if ($member['relationship']): ?> (<?php echo htmlspecialchars($member['relationship']); ?>)<?php endif; ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 
