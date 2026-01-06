@@ -12,7 +12,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1><?php echo htmlspecialchars(getSetting('organization_name', 'NexusDB')); ?> Dashboard</h1>
-        <p class="lead">Food Distribution Service Management System</p>
     </div>
 
     <div class="action-buttons" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">

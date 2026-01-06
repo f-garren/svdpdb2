@@ -125,7 +125,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>Record Money Visit</h1>
-        <p class="lead">Track money assistance with automatic limit checking</p>
     </div>
 
     <?php if ($error): ?>

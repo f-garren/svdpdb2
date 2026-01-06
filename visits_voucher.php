@@ -132,7 +132,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>Create Voucher</h1>
-        <p class="lead">Create a new voucher for a customer</p>
     </div>
 
     <?php if ($error): ?>
