@@ -101,8 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_submit'])) {
         logEmployeeAction($db, getCurrentEmployeeId(), 'voucher_create', 'voucher', $voucher_id, "Created voucher {$voucher_code} for customer ID {$customer_id}, amount: $" . number_format($voucher_amount, 2));
         logEmployeeAction($db, getCurrentEmployeeId(), 'visit_create', 'visit', $visit_id, "Created voucher visit for customer ID {$customer_id}");
         
-        // Redirect to customer view
-        header('Location: customer_view.php?id=' . $customer_id);
+        // Redirect to customer view and scroll to voucher visits
+        header('Location: customer_view.php?id=' . $customer_id . '#voucher-visits');
         exit;
         
     } catch (Exception $e) {

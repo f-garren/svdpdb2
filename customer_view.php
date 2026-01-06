@@ -577,7 +577,7 @@ include 'header.php';
                 <!-- Money Visit Limits -->
                 <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; background: var(--light-bg);">
                     <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
-                        <ion-icon name="cash"></ion-icon> Money Visits (Household)
+                        <ion-icon name="cash"></ion-icon> Money Visits
                     </h3>
                     <ul style="list-style: none; padding: 0; margin: 0;">
                         <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
@@ -1296,7 +1296,7 @@ include 'header.php';
                     </div>
                     
                     <!-- Voucher Visits Section -->
-                    <div class="visit-type-section" data-visit-type="voucher" style="margin-bottom: 2rem;">
+                    <div id="voucher-visits" class="visit-type-section" data-visit-type="voucher" style="margin-bottom: 2rem;">
                         <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Voucher Visits</h3>
                         <?php if (count($voucher_visits) > 0): ?>
                             <?php
@@ -1511,6 +1511,18 @@ function showInvalidateVisit(visitId) {
     document.getElementById('invalid_reason').value = '';
     document.getElementById('invalidateVisitModal').style.display = 'flex';
 }
+
+// Scroll to voucher visits section if hash is present
+window.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#voucher-visits') {
+        setTimeout(function() {
+            const voucherSection = document.getElementById('voucher-visits');
+            if (voucherSection) {
+                voucherSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    }
+});
 </script>
 
 <style>
