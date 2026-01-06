@@ -476,7 +476,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>Settings</h1>
-        <p class="lead">Configure application settings</p>
     </div>
 
     <?php if ($error): ?>

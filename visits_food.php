@@ -106,7 +106,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>Record Food Visit</h1>
-        <p class="lead">Track food visits with automatic limit checking</p>
     </div>
 
     <?php if ($error): ?>

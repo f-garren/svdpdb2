@@ -339,16 +339,31 @@ while ($row = $stmt->fetch()) {
 }
 
 // Get visit limits
-$visits_per_month = getSetting('visits_per_month_limit', 2);
-$visits_per_year = getSetting('visits_per_year_limit', 12);
-$min_days_between = getSetting('min_days_between_visits', 14);
+$visits_per_month = intval(getSetting('visits_per_month_limit', 2));
+$visits_per_year = intval(getSetting('visits_per_year_limit', 12));
+$min_days_between = intval(getSetting('min_days_between_visits', 14));
+
+$money_limit_total = intval(getSetting('money_distribution_limit', 3));
+$money_limit_month = intval(getSetting('money_distribution_limit_month', -1));
+$money_limit_year = intval(getSetting('money_distribution_limit_year', -1));
+$money_min_days_between = intval(getSetting('money_min_days_between', -1));
+
+$voucher_limit_month = intval(getSetting('voucher_limit_month', -1));
+$voucher_limit_year = intval(getSetting('voucher_limit_year', -1));
+$voucher_min_days_between = intval(getSetting('voucher_min_days_between', -1));
 
 // Calculate visit statistics by type
 $food_visits_this_month = 0;
 $food_visits_this_year = 0;
 $money_visits_total = 0;
+$money_visits_this_month = 0;
+$money_visits_this_year = 0;
 $voucher_visits_total = 0;
+$voucher_visits_this_month = 0;
+$voucher_visits_this_year = 0;
 $last_food_visit_date = null;
+$last_money_visit_date = null;
+$last_voucher_visit_date = null;
 $last_visit_date = null;
 
 foreach ($visits as $visit) {
@@ -374,8 +389,28 @@ foreach ($visits as $visit) {
         }
     } elseif ($visit_type === 'money') {
         $money_visits_total++;
+        if (date('Y-m', $visit_date) === date('Y-m', $now)) {
+            $money_visits_this_month++;
+        }
+        if (date('Y', $visit_date) === date('Y', $now)) {
+            $money_visits_this_year++;
+        }
+        
+        if ($last_money_visit_date === null || $visit_date > $last_money_visit_date) {
+            $last_money_visit_date = $visit_date;
+        }
     } elseif ($visit_type === 'voucher') {
         $voucher_visits_total++;
+        if (date('Y-m', $visit_date) === date('Y-m', $now)) {
+            $voucher_visits_this_month++;
+        }
+        if (date('Y', $visit_date) === date('Y', $now)) {
+            $voucher_visits_this_year++;
+        }
+        
+        if ($last_voucher_visit_date === null || $visit_date > $last_voucher_visit_date) {
+            $last_voucher_visit_date = $visit_date;
+        }
     }
     
     if ($last_visit_date === null || $visit_date > $last_visit_date) {
@@ -383,7 +418,60 @@ foreach ($visits as $visit) {
     }
 }
 
+// Get household customer IDs for money visit calculations
+$stmt = $db->prepare("SELECT DISTINCT hm2.customer_id 
+                   FROM household_members hm1
+                   INNER JOIN household_members hm2 ON hm1.name = hm2.name
+                   WHERE hm1.customer_id = ?");
+$stmt->execute([$customer_id]);
+$household_customer_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+if (empty($household_customer_ids)) {
+    $household_customer_ids = [$customer_id];
+} else {
+    $household_customer_ids[] = $customer_id;
+    $household_customer_ids = array_unique($household_customer_ids);
+}
+
+// Calculate household money visits
+$household_money_total = 0;
+$household_money_month = 0;
+$household_money_year = 0;
+if (!empty($household_customer_ids)) {
+    $placeholders = str_repeat('?,', count($household_customer_ids) - 1) . '?';
+    $stmt = $db->prepare("SELECT COUNT(DISTINCT v.id) as count 
+                       FROM visits v 
+                       WHERE v.customer_id IN ($placeholders) AND v.visit_type = 'money' AND (v.is_invalid = 0 OR v.is_invalid IS NULL)");
+    $stmt->execute($household_customer_ids);
+    $household_money_total = $stmt->fetch()['count'];
+    
+    $current_month = date('Y-m');
+    $current_year = date('Y');
+    $stmt = $db->prepare("SELECT COUNT(DISTINCT v.id) as count 
+                       FROM visits v 
+                       WHERE v.customer_id IN ($placeholders) AND v.visit_type = 'money' AND DATE_FORMAT(v.visit_date, '%Y-%m') = ? AND (v.is_invalid = 0 OR v.is_invalid IS NULL)");
+    $stmt->execute(array_merge($household_customer_ids, [$current_month]));
+    $household_money_month = $stmt->fetch()['count'];
+    
+    $stmt = $db->prepare("SELECT COUNT(DISTINCT v.id) as count 
+                       FROM visits v 
+                       WHERE v.customer_id IN ($placeholders) AND v.visit_type = 'money' AND YEAR(v.visit_date) = ? AND (v.is_invalid = 0 OR v.is_invalid IS NULL)");
+    $stmt->execute(array_merge($household_customer_ids, [$current_year]));
+    $household_money_year = $stmt->fetch()['count'];
+    
+    // Get last household money visit date
+    $stmt = $db->prepare("SELECT MAX(v.visit_date) as last_date 
+                       FROM visits v 
+                       WHERE v.customer_id IN ($placeholders) AND v.visit_type = 'money' AND (v.is_invalid = 0 OR v.is_invalid IS NULL)");
+    $stmt->execute($household_customer_ids);
+    $result = $stmt->fetch();
+    if ($result && $result['last_date']) {
+        $last_money_visit_date = strtotime($result['last_date']);
+    }
+}
+
 $days_since_last_food_visit = $last_food_visit_date ? floor((time() - $last_food_visit_date) / 86400) : null;
+$days_since_last_money_visit = $last_money_visit_date ? floor((time() - $last_money_visit_date) / 86400) : null;
+$days_since_last_voucher_visit = $last_voucher_visit_date ? floor((time() - $last_voucher_visit_date) / 86400) : null;
 
 $page_title = "Customer Details";
 include 'header.php';
@@ -453,33 +541,178 @@ include 'header.php';
         <div class="alert alert-success"><?php echo $success; ?></div>
     <?php endif; ?>
 
-    <!-- Visit Status Alert (only show in view mode) -->
+    <!-- Visit Limits Box (only show in view mode) -->
     <?php if (!$edit_mode): ?>
-        <?php if ($days_since_last_food_visit !== null): ?>
-            <?php if ($days_since_last_food_visit < $min_days_between): ?>
-                <div class="alert alert-warning">
-                    <ion-icon name="warning"></ion-icon> Last food visit was <?php echo $days_since_last_food_visit; ?> days ago. Minimum <?php echo $min_days_between; ?> days required between food visits.
+        <div class="report-section">
+            <h2>Visit Limits</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- Food Visit Limits -->
+                <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; background: var(--light-bg);">
+                    <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
+                        <ion-icon name="restaurant"></ion-icon> Food Visits
+                    </h3>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>This Month:</strong> 
+                            <span style="<?php echo $food_visits_this_month >= $visits_per_month ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $food_visits_this_month; ?>/<?php echo $visits_per_month < 0 ? '∞' : $visits_per_month; ?>
+                            </span>
+                        </li>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>This Year:</strong> 
+                            <span style="<?php echo $food_visits_this_year >= $visits_per_year ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $food_visits_this_year; ?>/<?php echo $visits_per_year < 0 ? '∞' : $visits_per_year; ?>
+                            </span>
+                        </li>
+                        <li style="padding: 0.5rem 0;">
+                            <strong>Min Days Between:</strong> 
+                            <?php echo $min_days_between < 0 ? '∞' : $min_days_between; ?> days
+                            <?php if ($days_since_last_food_visit !== null): ?>
+                                <br><small style="color: var(--text-color-muted);">Last visit: <?php echo $days_since_last_food_visit; ?> days ago</small>
+                            <?php endif; ?>
+                        </li>
+                    </ul>
                 </div>
-            <?php endif; ?>
+                
+                <!-- Money Visit Limits -->
+                <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; background: var(--light-bg);">
+                    <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
+                        <ion-icon name="cash"></ion-icon> Money Visits (Household)
+                    </h3>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>Total:</strong> 
+                            <span style="<?php echo $money_limit_total >= 0 && $household_money_total >= $money_limit_total ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $household_money_total; ?>/<?php echo $money_limit_total < 0 ? '∞' : $money_limit_total; ?>
+                            </span>
+                        </li>
+                        <?php if ($money_limit_month >= 0): ?>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>This Month:</strong> 
+                            <span style="<?php echo $household_money_month >= $money_limit_month ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $household_money_month; ?>/<?php echo $money_limit_month; ?>
+                            </span>
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($money_limit_year >= 0): ?>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>This Year:</strong> 
+                            <span style="<?php echo $household_money_year >= $money_limit_year ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $household_money_year; ?>/<?php echo $money_limit_year; ?>
+                            </span>
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($money_min_days_between >= 0): ?>
+                        <li style="padding: 0.5rem 0;">
+                            <strong>Min Days Between:</strong> 
+                            <?php echo $money_min_days_between; ?> days
+                            <?php if ($days_since_last_money_visit !== null): ?>
+                                <br><small style="color: var(--text-color-muted);">Last visit: <?php echo $days_since_last_money_visit; ?> days ago</small>
+                            <?php endif; ?>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+                
+                <!-- Voucher Visit Limits -->
+                <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; background: var(--light-bg);">
+                    <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem;">
+                        <ion-icon name="ticket"></ion-icon> Voucher Visits
+                    </h3>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <?php if ($voucher_limit_month >= 0): ?>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>This Month:</strong> 
+                            <span style="<?php echo $voucher_visits_this_month >= $voucher_limit_month ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $voucher_visits_this_month; ?>/<?php echo $voucher_limit_month; ?>
+                            </span>
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($voucher_limit_year >= 0): ?>
+                        <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                            <strong>This Year:</strong> 
+                            <span style="<?php echo $voucher_visits_this_year >= $voucher_limit_year ? 'color: #d32f2f; font-weight: bold;' : ''; ?>">
+                                <?php echo $voucher_visits_this_year; ?>/<?php echo $voucher_limit_year; ?>
+                            </span>
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($voucher_min_days_between >= 0): ?>
+                        <li style="padding: 0.5rem 0;">
+                            <strong>Min Days Between:</strong> 
+                            <?php echo $voucher_min_days_between; ?> days
+                            <?php if ($days_since_last_voucher_visit !== null): ?>
+                                <br><small style="color: var(--text-color-muted);">Last visit: <?php echo $days_since_last_voucher_visit; ?> days ago</small>
+                            <?php endif; ?>
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($voucher_limit_month < 0 && $voucher_limit_year < 0 && $voucher_min_days_between < 0): ?>
+                        <li style="padding: 0.5rem 0; color: var(--text-color-muted);">
+                            No limits configured
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Warning Banners (only show when limits are exceeded) -->
+        <?php if ($days_since_last_food_visit !== null && $days_since_last_food_visit < $min_days_between): ?>
+            <div class="alert alert-warning">
+                <ion-icon name="warning"></ion-icon> Last food visit was <?php echo $days_since_last_food_visit; ?> days ago. Minimum <?php echo $min_days_between; ?> days required between food visits.
+            </div>
         <?php endif; ?>
         
-        <?php if ($food_visits_this_month >= $visits_per_month): ?>
+        <?php if ($food_visits_this_month >= $visits_per_month && $visits_per_month >= 0): ?>
             <div class="alert alert-error">
                 <ion-icon name="close-circle"></ion-icon> Monthly food visit limit reached (<?php echo $food_visits_this_month; ?>/<?php echo $visits_per_month; ?>)
             </div>
-        <?php elseif ($food_visits_this_month > 0): ?>
-            <div class="alert alert-info">
-                <ion-icon name="information-circle"></ion-icon> <?php echo $food_visits_this_month; ?>/<?php echo $visits_per_month; ?> food visits this month
-            </div>
         <?php endif; ?>
         
-        <?php if ($food_visits_this_year >= $visits_per_year): ?>
+        <?php if ($food_visits_this_year >= $visits_per_year && $visits_per_year >= 0): ?>
             <div class="alert alert-error">
                 <ion-icon name="close-circle"></ion-icon> Yearly food visit limit reached (<?php echo $food_visits_this_year; ?>/<?php echo $visits_per_year; ?>)
             </div>
-        <?php elseif ($food_visits_this_year > 0): ?>
-            <div class="alert alert-info">
-                <ion-icon name="information-circle"></ion-icon> <?php echo $food_visits_this_year; ?>/<?php echo $visits_per_year; ?> food visits this year
+        <?php endif; ?>
+        
+        <?php if ($money_limit_total >= 0 && $household_money_total >= $money_limit_total): ?>
+            <div class="alert alert-error">
+                <ion-icon name="close-circle"></ion-icon> Total money visit limit reached (household: <?php echo $household_money_total; ?>/<?php echo $money_limit_total; ?>)
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($money_limit_month >= 0 && $household_money_month >= $money_limit_month): ?>
+            <div class="alert alert-error">
+                <ion-icon name="close-circle"></ion-icon> Monthly money visit limit reached (household: <?php echo $household_money_month; ?>/<?php echo $money_limit_month; ?>)
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($money_limit_year >= 0 && $household_money_year >= $money_limit_year): ?>
+            <div class="alert alert-error">
+                <ion-icon name="close-circle"></ion-icon> Yearly money visit limit reached (household: <?php echo $household_money_year; ?>/<?php echo $money_limit_year; ?>)
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($days_since_last_money_visit !== null && $money_min_days_between >= 0 && $days_since_last_money_visit < $money_min_days_between): ?>
+            <div class="alert alert-warning">
+                <ion-icon name="warning"></ion-icon> Last money visit was <?php echo $days_since_last_money_visit; ?> days ago. Minimum <?php echo $money_min_days_between; ?> days required between money visits.
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($voucher_limit_month >= 0 && $voucher_visits_this_month >= $voucher_limit_month): ?>
+            <div class="alert alert-error">
+                <ion-icon name="close-circle"></ion-icon> Monthly voucher visit limit reached (<?php echo $voucher_visits_this_month; ?>/<?php echo $voucher_limit_month; ?>)
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($voucher_limit_year >= 0 && $voucher_visits_this_year >= $voucher_limit_year): ?>
+            <div class="alert alert-error">
+                <ion-icon name="close-circle"></ion-icon> Yearly voucher visit limit reached (<?php echo $voucher_visits_this_year; ?>/<?php echo $voucher_limit_year; ?>)
+            </div>
+        <?php endif; ?>
+        
+        <?php if ($days_since_last_voucher_visit !== null && $voucher_min_days_between >= 0 && $days_since_last_voucher_visit < $voucher_min_days_between): ?>
+            <div class="alert alert-warning">
+                <ion-icon name="warning"></ion-icon> Last voucher visit was <?php echo $days_since_last_voucher_visit; ?> days ago. Minimum <?php echo $voucher_min_days_between; ?> days required between voucher visits.
             </div>
         <?php endif; ?>
     <?php endif; ?>

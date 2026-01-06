@@ -100,7 +100,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>Redeem Voucher</h1>
-        <p class="lead">Enter voucher code to check credit and redeem</p>
     </div>
 
     <?php if ($error): ?>

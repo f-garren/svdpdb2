@@ -259,7 +259,6 @@ if (!empty($params)) {
 <div class="container">
     <div class="page-header">
         <h1>Reports & Statistics</h1>
-        <p class="lead">View insights and analytics</p>
     </div>
 
     <?php if ($error): ?>
@@ -467,7 +466,22 @@ if (!empty($params)) {
     <div class="report-section">
         <h2>Money Visit Statistics</h2>
         <div style="margin-bottom: 1rem;">
-            <a href="money_export.php<?php echo !empty($filter_date_from) || !empty($filter_date_to) ? '?date_from=' . urlencode($filter_date_from) . '&date_to=' . urlencode($filter_date_to) : ''; ?>" class="btn btn-primary">Export Money Visits to CSV</a>
+            <form method="GET" action="money_export.php" style="display: inline-block;">
+                <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0;">
+                        <label for="export_date_from" style="display: block; margin-bottom: 0.25rem; font-size: 0.9rem;">From Date (Optional)</label>
+                        <input type="date" name="date_from" id="export_date_from" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label for="export_date_to" style="display: block; margin-bottom: 0.25rem; font-size: 0.9rem;">To Date (Optional)</label>
+                        <input type="date" name="date_to" id="export_date_to" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <button type="submit" class="btn btn-primary">Export Money Visits to CSV</button>
+                    </div>
+                </div>
+                <small style="display: block; margin-top: 0.5rem; color: var(--text-color-muted);">Leave dates empty to export all money visits</small>
+            </form>
         </div>
         <div class="stats-grid" style="margin-bottom: 2rem;">
             <div class="stat-card">

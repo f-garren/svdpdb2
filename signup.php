@@ -203,7 +203,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>New <?php echo htmlspecialchars(getCustomerTerm('Customer')); ?> Signup</h1>
-        <p class="lead">Register a new <?php echo strtolower(getCustomerTerm('customer')); ?> for food distribution services</p>
     </div>
 
     <?php if ($error): ?>
@@ -404,7 +403,7 @@ include 'header.php';
 
         <div class="form-section">
             <h2>Household Members</h2>
-            <p class="help-text">List all persons living in the household (name, birthdate, relationship). The person registering is automatically included.</p>
+            <p class="help-text">List ALL persons living in the household (name, birthdate, relationship). Ensure all fields are filled.</p>
             
             <div id="household_members">
                 <div class="household-member">
@@ -442,14 +441,12 @@ include 'header.php';
                 <div class="form-group">
                     <label for="rent_amount">Amount of Rent</label>
                     <input type="number" id="rent_amount" name="rent_amount" step="0.01" min="0" placeholder="0.00">
-                    <small class="help-text">Enter monthly rent amount</small>
                 </div>
             </div>
         </div>
 
         <div class="form-section">
             <h2>Total Household Income</h2>
-            <p class="help-text">Enter monthly income amounts for each source</p>
             
             <div class="form-row">
                 <div class="form-group">

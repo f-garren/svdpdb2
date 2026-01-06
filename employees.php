@@ -184,7 +184,6 @@ include 'header.php';
 <div class="container">
     <div class="page-header">
         <h1>Employee Management</h1>
-        <p class="lead">Manage employee accounts and permissions</p>
     </div>
 
     <?php if ($error): ?>

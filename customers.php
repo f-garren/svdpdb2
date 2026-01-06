@@ -197,10 +197,9 @@ include 'header.php';
     </div>
 
     <!-- General Search Section -->
-    <div class="report-section quick-search-section" style="margin-bottom: 1.5rem;">
-        <h2>Quick Customer Search</h2>
-        <p class="help-text">Type a customer name or phone number to quickly find a customer (similar to visit pages)</p>
-        <div class="form-group" style="margin-bottom: 1rem; position: relative;">
+    <div class="report-section quick-search-section">
+        <h2>Quick Search</h2>
+        <div class="form-group" style="position: relative;">
             <label for="general_search">Search Customer</label>
             <input type="text" id="general_search" placeholder="Type <?php echo strtolower(getCustomerTerm('customer')); ?> name or phone..." class="search-input" autocomplete="off">
             <div id="general_search_results" class="search-results"></div>
