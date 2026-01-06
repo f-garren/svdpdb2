@@ -284,7 +284,7 @@ include 'header.php';
                     <div class="form-group" style="flex: 1 1 200px;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
                             <input type="checkbox" name="permissions[]" value="customer_history_view">
-                            <span>Customer History View</span>
+                            <span>Audit Log Access</span>
                         </label>
                     </div>
                 </div>
