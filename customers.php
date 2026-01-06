@@ -197,7 +197,7 @@ include 'header.php';
     </div>
 
     <!-- General Search Section -->
-    <div class="report-section quick-search-section" style="margin-bottom: 2rem;">
+    <div class="report-section quick-search-section" style="margin-bottom: 1.5rem;">
         <h2>Quick Customer Search</h2>
         <p class="help-text">Type a customer name or phone number to quickly find a customer (similar to visit pages)</p>
         <div class="form-group" style="margin-bottom: 1rem; position: relative;">
@@ -392,9 +392,20 @@ if (generalSearchInput && generalSearchResults) {
                     data.forEach(customer => {
                         const div = document.createElement('div');
                         div.className = 'customer-result';
+                        
+                        // Handle household member matches with styling
+                        let displayName;
+                        if (customer.is_household_match && customer.household_member_name) {
+                            // Household member match: bold household member, italics primary customer
+                            displayName = `<strong>${escapeHtml(customer.household_member_name)}</strong> <em>(${escapeHtml(customer.name)})</em>`;
+                        } else {
+                            // Regular customer match
+                            displayName = `<strong>${escapeHtml(customer.name)}</strong>`;
+                        }
+                        
                         div.innerHTML = `
-                            <strong>${customer.name}</strong><br>
-                            <small>${customer.phone || ''} - ${customer.city || ''}, ${customer.state || ''}</small>
+                            ${displayName}<br>
+                            <small>${escapeHtml(customer.phone || '')} - ${escapeHtml(customer.city || '')}, ${escapeHtml(customer.state || '')}</small>
                         `;
                         div.addEventListener('click', () => {
                             // Fetch full customer details and display
@@ -410,7 +421,9 @@ if (generalSearchInput && generalSearchResults) {
                                             hour: 'numeric', 
                                             minute: '2-digit' 
                                         }) : '';
-                                        generalSearchTableBody.innerHTML = `
+                                        
+                                        // Build table rows - primary customer first
+                                        let tableRows = `
                                             <tr>
                                                 <td>${escapeHtml(cust.name)}</td>
                                                 <td>${escapeHtml(cust.phone || '')}</td>
@@ -425,9 +438,39 @@ if (generalSearchInput && generalSearchResults) {
                                                 </td>
                                             </tr>
                                         `;
+                                        
+                                        // Add household members as additional rows
+                                        if (cust.household_members && cust.household_members.length > 0) {
+                                            cust.household_members.forEach(member => {
+                                                const memberBirthdate = member.birthdate ? new Date(member.birthdate).toLocaleDateString('en-US', { 
+                                                    month: 'short', 
+                                                    day: 'numeric', 
+                                                    year: 'numeric'
+                                                }) : '';
+                                                tableRows += `
+                                                    <tr style="background-color: var(--light-bg);">
+                                                        <td><em>${escapeHtml(member.name)}</em> <small>(Household Member)</small></td>
+                                                        <td>-</td>
+                                                        <td>-</td>
+                                                        <td>-</td>
+                                                        <td>${memberBirthdate}</td>
+                                                        <td>-</td>
+                                                        <td>-</td>
+                                                    </tr>
+                                                `;
+                                            });
+                                        }
+                                        
+                                        generalSearchTableBody.innerHTML = tableRows;
                                         generalSearchSelected.style.display = 'block';
                                         generalSearchResults.innerHTML = '';
-                                        generalSearchInput.value = cust.name;
+                                        
+                                        // Set input value based on match type
+                                        if (customer.is_household_match && customer.household_member_name) {
+                                            generalSearchInput.value = customer.household_member_name;
+                                        } else {
+                                            generalSearchInput.value = cust.name;
+                                        }
                                     }
                                 });
                         });

@@ -1202,9 +1202,9 @@ include 'header.php';
             </div>
 
             <!-- Audit Trail Section -->
-            <?php if ($total_audit_logs > 0): ?>
+            <?php if ($total_audit_logs > 0 && (hasPermission('customer_history_view') || isAdmin())): ?>
             <div class="detail-section">
-                <h2>Change History (Audit Trail)</h2>
+                <h2>Change History</h2>
                 <p style="margin-bottom: 1rem; color: var(--text-color-muted);">
                     Showing <?php echo number_format($audit_offset + 1); ?>-<?php echo number_format(min($audit_offset + $audit_logs_per_page, $total_audit_logs)); ?> of <?php echo number_format($total_audit_logs); ?> total changes
                 </p>

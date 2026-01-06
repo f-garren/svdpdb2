@@ -61,14 +61,13 @@ include 'header.php';
         
         if (count($recent_customers_list) > 0) {
             echo '<table class="data-table">';
-            echo '<thead><tr><th>Name</th><th>Phone</th><th>Signup Date</th><th>City</th><th>Visits</th><th>Actions</th></tr></thead>';
+            echo '<thead><tr><th>Name</th><th>Phone</th><th>Signup Date</th><th>Visits</th><th>Actions</th></tr></thead>';
             echo '<tbody>';
             foreach ($recent_customers_list as $customer) {
                 echo '<tr>';
                 echo '<td>' . htmlspecialchars($customer['name']) . '</td>';
                 echo '<td>' . htmlspecialchars($customer['phone']) . '</td>';
                 echo '<td>' . date('M d, Y g:i A', strtotime($customer['signup_date'])) . '</td>';
-                echo '<td>' . htmlspecialchars($customer['city']) . '</td>';
                 echo '<td>' . $customer['visit_count'] . '</td>';
                 echo '<td><a href="customer_view.php?id=' . $customer['id'] . '" class="btn btn-small">View</a></td>';
                 echo '</tr>';

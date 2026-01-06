@@ -159,7 +159,7 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 CREATE TABLE IF NOT EXISTS `employee_permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `employee_id` int(11) NOT NULL,
-  `permission` enum('customer_create','customer_edit','food_visit','money_visit','voucher_create','voucher_redeem','visit_invalidate','settings_access','report_access') NOT NULL,
+  `permission` enum('customer_create','customer_edit','food_visit','money_visit','voucher_create','voucher_redeem','visit_invalidate','settings_access','report_access','customer_history_view') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_employee_permission` (`employee_id`, `permission`),
